@@ -1,0 +1,14 @@
+.idea/
+*.iml
+*.ipr
+*.iws
+
+.vscode/
+
+.DS_Store
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py.class
