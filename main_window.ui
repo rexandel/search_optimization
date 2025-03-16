@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1173</width>
-    <height>748</height>
+    <width>1216</width>
+    <height>750</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1215</width>
+    <height>750</height>
+   </size>
   </property>
   <property name="font">
    <font>
@@ -23,43 +29,69 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>20</y>
+      <y>40</y>
       <width>931</width>
       <height>601</height>
      </rect>
     </property>
    </widget>
-   <widget class="QCheckBox" name="gridVisibility">
+   <widget class="QGroupBox" name="settingsBox">
     <property name="geometry">
      <rect>
       <x>960</x>
-      <y>20</y>
-      <width>190</width>
-      <height>30</height>
+      <y>540</y>
+      <width>251</width>
+      <height>141</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Grid visibility</string>
+    <property name="title">
+     <string>Settings</string>
     </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="axisVisibility">
-    <property name="geometry">
-     <rect>
-      <x>960</x>
-      <y>60</y>
-      <width>190</width>
-      <height>30</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Axis visibility</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
+    <widget class="QCheckBox" name="axisVisibility">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>30</y>
+       <width>130</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Axis visibility</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="gridVisibility">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>60</y>
+       <width>130</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Grid visibility</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="returnButton">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>90</y>
+       <width>221</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Return to starting position</string>
+     </property>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -67,7 +99,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1173</width>
+     <width>1216</width>
      <height>27</height>
     </rect>
    </property>

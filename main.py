@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtOpenGL import QGLWidget
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5 import uic
 
 from OpenGL.GL import *
@@ -14,12 +14,23 @@ class Optimization3D(QGLWidget):
     def __init__(self, parent=None):
         glutInit()
         super().__init__(parent)
-        self.angle_x = -90
-        self.angle_y = 0
+
+        self.initial_angle_x = -90
+        self.initial_angle_y = 0
+        self.initial_zoom_level = 35
+        self.initial_pan_x = 0.0
+        self.initial_pan_y = 0.0
+
+        self.angle_x = self.initial_angle_x
+        self.angle_y = self.initial_angle_y
+        self.zoom_level = self.initial_zoom_level
+        self.pan_x = self.initial_pan_x
+        self.pan_y = self.initial_pan_y
+
         self.last_x = 0
         self.last_y = 0
-        self.zoom_level = 35
         self.is_dragging = False
+        self.is_panning = False
 
         self.grid_size = 10
         self.grid_step = 1
@@ -30,6 +41,14 @@ class Optimization3D(QGLWidget):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
         self.timer.start(16)
+
+    def reset_view(self):
+        self.angle_x = self.initial_angle_x
+        self.angle_y = self.initial_angle_y
+        self.zoom_level = self.initial_zoom_level
+        self.pan_x = self.initial_pan_x
+        self.pan_y = self.initial_pan_y
+        self.update()
 
     def initializeGL(self):
         glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
@@ -74,6 +93,8 @@ class Optimization3D(QGLWidget):
         glLoadIdentity()
 
         gluLookAt(0, 0, self.zoom_level, 0, 0, 0, 0, 1, 0)
+
+        glTranslatef(self.pan_x, self.pan_y, 0)
 
         glRotatef(self.angle_x, 1, 0, 0)
         glRotatef(self.angle_y, 0, 1, 0)
@@ -188,9 +209,13 @@ class Optimization3D(QGLWidget):
             glEnd()
 
     def mousePressEvent(self, event):
-        self.is_dragging = True
         self.last_x = event.x()
         self.last_y = event.y()
+
+        if event.modifiers() & Qt.ControlModifier:
+            self.is_panning = True
+        else:
+            self.is_dragging = True
 
     def wheelEvent(self, event):
         delta = event.angleDelta().y() / 120
@@ -199,15 +224,22 @@ class Optimization3D(QGLWidget):
         self.update()
 
     def mouseMoveEvent(self, event):
+        dx, dy = event.x() - self.last_x, event.y() - self.last_y
+
         if self.is_dragging:
-            dx, dy = event.x() - self.last_x, event.y() - self.last_y
             self.angle_x += dy / 5
             self.angle_y += dx / 5
-            self.last_x, self.last_y = event.x(), event.y()
-            self.update()
+        elif self.is_panning:
+            pan_speed = 0.001 * self.zoom_level
+            self.pan_x += dx * pan_speed
+            self.pan_y -= dy * pan_speed
+
+        self.last_x, self.last_y = event.x(), event.y()
+        self.update()
 
     def mouseReleaseEvent(self, event):
         self.is_dragging = False
+        self.is_panning = False
 
 
 class MainWindow(QMainWindow):
@@ -225,6 +257,7 @@ class MainWindow(QMainWindow):
 
         self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
         self.axisVisibility.stateChanged.connect(self.toggle_axis_visibility)
+        self.returnButton.clicked.connect(self.reset_view)
 
     def toggle_grid_visibility(self, state):
         self.gl_container.show_grid = bool(state)
@@ -233,6 +266,9 @@ class MainWindow(QMainWindow):
     def toggle_axis_visibility(self, state):
         self.gl_container.show_axes = bool(state)
         self.gl_container.update()
+
+    def reset_view(self):
+        self.gl_container.reset_view()
 
 
 if __name__ == "__main__":
