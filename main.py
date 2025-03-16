@@ -1,12 +1,13 @@
-import numpy as np
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtOpenGL import QGLWidget
 from PyQt5.QtCore import QTimer
+from PyQt5 import uic
+
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
+
 import sys
-from PyQt5 import uic
 
 
 class Optimization3D(QGLWidget):
@@ -22,6 +23,9 @@ class Optimization3D(QGLWidget):
 
         self.grid_size = 10
         self.grid_step = 1
+
+        self.show_grid = True
+        self.show_axes = True
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
@@ -74,9 +78,11 @@ class Optimization3D(QGLWidget):
         glRotatef(self.angle_x, 1, 0, 0)
         glRotatef(self.angle_y, 0, 1, 0)
 
-        self.draw_grid()
+        if self.show_grid:
+            self.draw_grid()
 
-        self.draw_axes()
+        if self.show_axes:
+            self.draw_axes()
 
     def draw_label(self, x, y, z, label, color=(0.0, 0.0, 0.0)):
         glDisable(GL_LIGHTING)
@@ -216,6 +222,17 @@ class MainWindow(QMainWindow):
 
         self.openGLWidget.setParent(None)
         self.openGLWidget = self.gl_container
+
+        self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
+        self.axisVisibility.stateChanged.connect(self.toggle_axis_visibility)
+
+    def toggle_grid_visibility(self, state):
+        self.gl_container.show_grid = bool(state)
+        self.gl_container.update()
+
+    def toggle_axis_visibility(self, state):
+        self.gl_container.show_axes = bool(state)
+        self.gl_container.update()
 
 
 if __name__ == "__main__":
