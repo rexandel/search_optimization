@@ -1,0 +1,19 @@
+{
+  "functions": [
+    {
+      "name": "Rastrigin Function",
+      "formula": "f(x,y) = 20 + x² + y² - 10(cos(2πx) + cos(2πy))",
+      "python_formula": "lambda x, y: 20 + x**2 + y**2 - 10*(np.cos(2*np.pi*x) + np.cos(2*np.pi*y))"
+    },
+    {
+      "name": "Ackley Function",
+      "formula": "f(x,y) = -20 * exp(-0.2 * sqrt(0.5 * (x² + y²))) - exp(0.5 * (cos(2πx) + cos(2πy))) + 20 + e",
+      "python_formula": "lambda x, y: -20 * np.exp(-0.2 * np.sqrt(0.5 * (x**2 + y**2))) - np.exp(0.5 * (np.cos(2*np.pi*x) + np.cos(2*np.pi*y))) + 20 + np.e"
+    },
+    {
+      "name": "Himmelblau Function",
+      "formula": "f(x,y) = (x² + y - 11)² + (x + y² - 7)²",
+      "python_formula": "lambda x, y: (x**2 + y - 11)**2 + (x + y**2 - 7)**2"
+    }
+  ]
+}
