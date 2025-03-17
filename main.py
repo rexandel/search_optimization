@@ -10,44 +10,44 @@ from OpenGL.GLU import *
 import sys
 
 
-class Optimization3D(QGLWidget):
+class Visualization3DWidget(QGLWidget):
     def __init__(self, parent=None):
         glutInit()
         super().__init__(parent)
 
-        self.initial_angle_x = -90
-        self.initial_angle_y = 0
-        self.initial_zoom_level = 35
-        self.initial_pan_x = 0.0
-        self.initial_pan_y = 0.0
+        self.default_rotation_x = -90
+        self.default_rotation_y = 0
+        self.default_zoom_level = 35
+        self.default_position_x = 0.0
+        self.default_position_y = 0.0
 
-        self.angle_x = self.initial_angle_x
-        self.angle_y = self.initial_angle_y
-        self.zoom_level = self.initial_zoom_level
-        self.pan_x = self.initial_pan_x
-        self.pan_y = self.initial_pan_y
+        self.rotation_x = self.default_rotation_x
+        self.rotation_y = self.default_rotation_y
+        self.zoom_level = self.default_zoom_level
+        self.position_x = self.default_position_x
+        self.position_y = self.default_position_y
 
-        self.last_x = 0
-        self.last_y = 0
-        self.is_dragging = False
-        self.is_panning = False
+        self.mouse_last_x = 0
+        self.mouse_last_y = 0
+        self.is_rotating = False
+        self.is_moving = False
 
         self.grid_size = 10
         self.grid_step = 1
 
-        self.show_grid = True
-        self.show_axes = True
+        self.grid_visible = True
+        self.axes_visible = True
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update)
-        self.timer.start(16)
+        self.animation_timer = QTimer(self)
+        self.animation_timer.timeout.connect(self.update)
+        self.animation_timer.start(16)
 
-    def reset_view(self):
-        self.angle_x = self.initial_angle_x
-        self.angle_y = self.initial_angle_y
-        self.zoom_level = self.initial_zoom_level
-        self.pan_x = self.initial_pan_x
-        self.pan_y = self.initial_pan_y
+    def restore_default_view(self):
+        self.rotation_x = self.default_rotation_x
+        self.rotation_y = self.default_rotation_y
+        self.zoom_level = self.default_zoom_level
+        self.position_x = self.default_position_x
+        self.position_y = self.default_position_y
         self.update()
 
     def initializeGL(self):
@@ -79,13 +79,13 @@ class Optimization3D(QGLWidget):
         gluPerspective(45, self.width() / self.height(), 1, 100)
         glMatrixMode(GL_MODELVIEW)
 
-    def resizeGL(self, w, h):
-        if h == 0:
-            h = 1
-        glViewport(0, 0, w, h)
+    def resizeGL(self, width, height):
+        if height == 0:
+            height = 1
+        glViewport(0, 0, width, height)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        gluPerspective(45, w / h, 1, 100)
+        gluPerspective(45, width / height, 1, 100)
         glMatrixMode(GL_MODELVIEW)
 
     def paintGL(self):
@@ -94,18 +94,18 @@ class Optimization3D(QGLWidget):
 
         gluLookAt(0, 0, self.zoom_level, 0, 0, 0, 0, 1, 0)
 
-        glTranslatef(self.pan_x, self.pan_y, 0)
+        glTranslatef(self.position_x, self.position_y, 0)
 
-        glRotatef(self.angle_x, 1, 0, 0)
-        glRotatef(self.angle_y, 0, 1, 0)
+        glRotatef(self.rotation_x, 1, 0, 0)
+        glRotatef(self.rotation_y, 0, 1, 0)
 
-        if self.show_grid:
-            self.draw_grid()
+        if self.grid_visible:
+            self.render_grid()
 
-        if self.show_axes:
-            self.draw_axes()
+        if self.axes_visible:
+            self.render_axes()
 
-    def draw_label(self, x, y, z, label, color=(0.0, 0.0, 0.0)):
+    def render_axis_label(self, x, y, z, label, color=(0.0, 0.0, 0.0)):
         glDisable(GL_LIGHTING)
         glColor3f(*color)
 
@@ -113,22 +113,22 @@ class Optimization3D(QGLWidget):
 
         glTranslatef(x, y, z)
 
-        glRotatef(-self.angle_y, 0, 1, 0)
-        glRotatef(-self.angle_x, 1, 0, 0)
+        glRotatef(-self.rotation_y, 0, 1, 0)
+        glRotatef(-self.rotation_x, 1, 0, 0)
 
         size = 0.5
         if label == "X":
-            self.draw_x(0, 0, 0, size)
+            self.render_x_symbol(0, 0, 0, size)
         elif label == "Y":
-            self.draw_y(0, 0, 0, size)
+            self.render_y_symbol(0, 0, 0, size)
         elif label == "Z":
-            self.draw_z(0, 0, 0, size)
+            self.render_z_symbol(0, 0, 0, size)
 
         glPopMatrix()
 
         glEnable(GL_LIGHTING)
 
-    def draw_x(self, x, y, z, size):
+    def render_x_symbol(self, x, y, z, size):
         glLineWidth(2.0)
         glBegin(GL_LINES)
         glVertex3f(x - size / 2, y + size / 2, z)
@@ -137,7 +137,7 @@ class Optimization3D(QGLWidget):
         glVertex3f(x + size / 2, y + size / 2, z)
         glEnd()
 
-    def draw_y(self, x, y, z, size):
+    def render_y_symbol(self, x, y, z, size):
         glLineWidth(2.0)
         glBegin(GL_LINES)
         glVertex3f(x - size / 2, y + size / 2, z)
@@ -148,7 +148,7 @@ class Optimization3D(QGLWidget):
         glVertex3f(x, y - size / 2, z)
         glEnd()
 
-    def draw_z(self, x, y, z, size):
+    def render_z_symbol(self, x, y, z, size):
         glLineWidth(2.0)
         glBegin(GL_LINES)
         glVertex3f(x - size / 2, y + size / 2, z)
@@ -159,7 +159,7 @@ class Optimization3D(QGLWidget):
         glVertex3f(x + size / 2, y - size / 2, z)
         glEnd()
 
-    def draw_axes(self):
+    def render_axes(self):
         glDisable(GL_LIGHTING)
 
         glLineWidth(2)
@@ -180,17 +180,17 @@ class Optimization3D(QGLWidget):
 
         offset = 0.7
 
-        self.draw_label(self.grid_size + offset, 0, 0, "X", (0, 0, 0))
+        self.render_axis_label(self.grid_size + offset, 0, 0, "X", (0, 0, 0))
 
-        self.draw_label(0, self.grid_size + offset, 0, "Y", (0, 0, 0))
+        self.render_axis_label(0, self.grid_size + offset, 0, "Y", (0, 0, 0))
 
-        self.draw_label(0, 0, self.grid_size + offset, "Z", (0, 0, 0))
+        self.render_axis_label(0, 0, self.grid_size + offset, "Z", (0, 0, 0))
 
         glLineWidth(1)
 
         glEnable(GL_LIGHTING)
 
-    def draw_grid(self):
+    def render_grid(self):
         glLineWidth(1)
         glColor3f(0.7, 0.7, 0.7)
 
@@ -209,13 +209,13 @@ class Optimization3D(QGLWidget):
             glEnd()
 
     def mousePressEvent(self, event):
-        self.last_x = event.x()
-        self.last_y = event.y()
+        self.mouse_last_x = event.x()
+        self.mouse_last_y = event.y()
 
         if event.modifiers() & Qt.ControlModifier:
-            self.is_panning = True
+            self.is_moving = True
         else:
-            self.is_dragging = True
+            self.is_rotating = True
 
     def wheelEvent(self, event):
         delta = event.angleDelta().y() / 120
@@ -224,55 +224,55 @@ class Optimization3D(QGLWidget):
         self.update()
 
     def mouseMoveEvent(self, event):
-        dx, dy = event.x() - self.last_x, event.y() - self.last_y
+        dx, dy = event.x() - self.mouse_last_x, event.y() - self.mouse_last_y
 
-        if self.is_dragging:
-            self.angle_x += dy / 5
-            self.angle_y += dx / 5
-        elif self.is_panning:
-            pan_speed = 0.001 * self.zoom_level
-            self.pan_x += dx * pan_speed
-            self.pan_y -= dy * pan_speed
+        if self.is_rotating:
+            self.rotation_x += dy / 5
+            self.rotation_y += dx / 5
+        elif self.is_moving:
+            movement_speed = 0.001 * self.zoom_level
+            self.position_x += dx * movement_speed
+            self.position_y -= dy * movement_speed
 
-        self.last_x, self.last_y = event.x(), event.y()
+        self.mouse_last_x, self.mouse_last_y = event.x(), event.y()
         self.update()
 
     def mouseReleaseEvent(self, event):
-        self.is_dragging = False
-        self.is_panning = False
+        self.is_rotating = False
+        self.is_moving = False
 
 
-class MainWindow(QMainWindow):
+class Visualization3DApp(QMainWindow):
     def __init__(self):
         super().__init__()
 
         uic.loadUi('main_window.ui', self)
 
-        self.gl_container = Optimization3D(self.centralwidget)
+        self.visualization_widget = Visualization3DWidget(self.centralwidget)
 
-        self.gl_container.setGeometry(self.openGLWidget.geometry())
+        self.visualization_widget.setGeometry(self.openGLWidget.geometry())
 
         self.openGLWidget.setParent(None)
-        self.openGLWidget = self.gl_container
+        self.openGLWidget = self.visualization_widget
 
         self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
-        self.axisVisibility.stateChanged.connect(self.toggle_axis_visibility)
-        self.returnButton.clicked.connect(self.reset_view)
+        self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
+        self.returnButton.clicked.connect(self.reset_view_to_default)
 
     def toggle_grid_visibility(self, state):
-        self.gl_container.show_grid = bool(state)
-        self.gl_container.update()
+        self.visualization_widget.grid_visible = bool(state)
+        self.visualization_widget.update()
 
-    def toggle_axis_visibility(self, state):
-        self.gl_container.show_axes = bool(state)
-        self.gl_container.update()
+    def toggle_axes_visibility(self, state):
+        self.visualization_widget.axes_visible = bool(state)
+        self.visualization_widget.update()
 
-    def reset_view(self):
-        self.gl_container.reset_view()
+    def reset_view_to_default(self):
+        self.visualization_widget.restore_default_view()
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = Visualization3DApp()
     window.show()
     sys.exit(app.exec_())

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1216</width>
-    <height>750</height>
+    <width>1215</width>
+    <height>751</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -30,8 +30,8 @@
      <rect>
       <x>20</x>
       <y>40</y>
-      <width>931</width>
-      <height>601</height>
+      <width>921</width>
+      <height>641</height>
      </rect>
     </property>
    </widget>
@@ -93,13 +93,23 @@
      </property>
     </widget>
    </widget>
+   <widget class="QComboBox" name="selectFunctionComboBox">
+    <property name="geometry">
+     <rect>
+      <x>960</x>
+      <y>40</y>
+      <width>241</width>
+      <height>41</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1216</width>
+     <width>1215</width>
      <height>27</height>
     </rect>
    </property>
