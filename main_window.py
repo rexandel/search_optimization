@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import uic
 
-from utils import FunctionManager
+from function_manager import FunctionManager
 
-class Visualization3DApp(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
