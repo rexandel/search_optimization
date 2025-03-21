@@ -7,7 +7,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        uic.loadUi('main_window.ui', self)
+        uic.loadUi('gui/windows/main.ui', self)
 
         self.function_manager = FunctionManager('functions.json')
         self.selectFunctionComboBox.clear()

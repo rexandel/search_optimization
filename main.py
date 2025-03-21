@@ -1,10 +1,10 @@
 from PyQt5.QtWidgets import QApplication
 import sys
 
-from gui import Visualization3DApp
+from main_window import MainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = Visualization3DApp()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec_())
