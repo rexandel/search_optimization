@@ -2,18 +2,39 @@
   "functions": [
     {
       "name": "Rastrigin Function",
-      "formula": "f(x,y) = 20 + x² + y² - 10(cos(2πx) + cos(2πy))",
+      "formula": "f(x,y) = 20 + x^2 + y^2 - 10*(cos(2πx) + cos(2πy))",
+      "latex_formula": "$f(x, y) = 20 + x^2 + y^2 - 10 \\cdot (\\cos(2\\pi x) + \\cos(2\\pi y))$",
       "python_formula": "lambda x, y: 20 + x**2 + y**2 - 10*(np.cos(2*np.pi*x) + np.cos(2*np.pi*y))"
     },
     {
       "name": "Ackley Function",
-      "formula": "f(x,y) = -20 * exp(-0.2 * sqrt(0.5 * (x² + y²))) - exp(0.5 * (cos(2πx) + cos(2πy))) + 20 + e",
+      "formula": "f(x,y) = -20 * exp(-0.2 * sqrt(0.5 * (x^2 + y^2))) - exp(0.5 * (cos(2πx) + cos(2πy))) + 20 + e",
+      "latex_formula": "$f(x, y) = -20 \\cdot \\exp\\left(-0.2 \\cdot \\sqrt{0.5 \\cdot (x^2 + y^2)}\\right) - \\exp\\left(0.5 \\cdot (\\cos(2\\pi x) + \\cos(2\\pi y))\\right) + 20 + e$",
       "python_formula": "lambda x, y: -20 * np.exp(-0.2 * np.sqrt(0.5 * (x**2 + y**2))) - np.exp(0.5 * (np.cos(2*np.pi*x) + np.cos(2*np.pi*y))) + 20 + np.e"
     },
     {
       "name": "Himmelblau Function",
-      "formula": "f(x,y) = (x² + y - 11)² + (x + y² - 7)²",
+      "formula": "f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2",
+      "latex_formula": "$f(x, y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2$",
       "python_formula": "lambda x, y: (x**2 + y - 11)**2 + (x + y**2 - 7)**2"
+    },
+    {
+      "name": "Sphere Function",
+      "formula": "f(x,y) = x^2 + y^2",
+      "latex_formula": "$f(x, y) = x^2 + y^2$",
+      "python_formula": "lambda x, y: x**2 + y**2"
+    },
+    {
+      "name": "Rosenbrock Function",
+      "formula": "f(x,y) = (1 - x)^2 + 100*(y - x^2)^2",
+      "latex_formula": "$f(x, y) = (1 - x)^2 + 100 \\cdot (y - x^2)^2$",
+      "python_formula": "lambda x, y: (1 - x)**2 + 100 * (y - x**2)**2"
+    },
+    {
+      "name": "Beale Function",
+      "formula": "f(x,y) = (1.5 - x + x*y)^2 + (2.25 - x + x*y^2)^2 + (2.625 - x + x*y^3)^2",
+      "latex_formula": "$f(x, y) = (1.5 - x + x \\cdot y)^2 + (2.25 - x + x \\cdot y^2)^2 + (2.625 - x + x \\cdot y^3)^2$",
+      "python_formula": "lambda x, y: (1.5 - x + x*y)**2 + (2.25 - x + x*y**2)**2 + (2.625 - x + x*y**3)**2"
     }
   ]
 }
