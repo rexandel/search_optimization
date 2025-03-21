@@ -6,116 +6,194 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1215</width>
-    <height>751</height>
+    <width>1185</width>
+    <height>705</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>1215</width>
-    <height>750</height>
+    <width>0</width>
+    <height>0</height>
    </size>
-  </property>
-  <property name="font">
-   <font>
-    <pointsize>12</pointsize>
-   </font>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QOpenGLWidget" name="openGLWidget">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>40</y>
-      <width>921</width>
-      <height>641</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QGroupBox" name="settingsBox">
-    <property name="geometry">
-     <rect>
-      <x>960</x>
-      <y>540</y>
-      <width>251</width>
-      <height>141</height>
-     </rect>
-    </property>
-    <property name="title">
-     <string>Settings</string>
-    </property>
-    <widget class="QCheckBox" name="axisVisibility">
-     <property name="geometry">
-      <rect>
-       <x>20</x>
-       <y>30</y>
-       <width>130</width>
-       <height>30</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Axis visibility</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="gridVisibility">
-     <property name="geometry">
-      <rect>
-       <x>20</x>
-       <y>60</y>
-       <width>130</width>
-       <height>30</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Grid visibility</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="returnButton">
-     <property name="geometry">
-      <rect>
-       <x>20</x>
-       <y>90</y>
-       <width>221</width>
-       <height>31</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Return to starting position</string>
-     </property>
-    </widget>
-   </widget>
-   <widget class="QComboBox" name="selectFunctionComboBox">
-    <property name="geometry">
-     <rect>
-      <x>960</x>
-      <y>40</y>
-      <width>241</width>
-      <height>41</height>
-     </rect>
-    </property>
-   </widget>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <spacer name="rightHorizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>5</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="2">
+     <spacer name="leftHorizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>5</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="2" column="1">
+     <spacer name="bottomVerticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>5</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,1">
+      <item>
+       <widget class="Visualization3DWidget" name="openGLWidget"/>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QTabWidget" name="tabWidget">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="firstTab">
+           <attribute name="title">
+            <string>1</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="secondTab">
+           <attribute name="title">
+            <string>2</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="thirdTab">
+           <attribute name="title">
+            <string>3</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="fourthTab">
+           <attribute name="title">
+            <string>4</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="fifthTab">
+           <attribute name="title">
+            <string>5</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="sixthTab">
+           <attribute name="title">
+            <string>6</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="seventhTab">
+           <attribute name="title">
+            <string>7</string>
+           </attribute>
+          </widget>
+          <widget class="QWidget" name="eighthTab">
+           <attribute name="title">
+            <string>8</string>
+           </attribute>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="selectFunctionComboBox"/>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="gridVisibility">
+          <property name="text">
+           <string>Grid Visibility</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="axisVisibility">
+          <property name="text">
+           <string>Axis Visibility</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="returnButton">
+          <property name="text">
+           <string>Return to initial state</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="1">
+     <spacer name="upperVerticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>5</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1215</width>
-     <height>27</height>
+     <width>1185</width>
+     <height>21</height>
     </rect>
    </property>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Visualization3DWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>visualization_3d_widget</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

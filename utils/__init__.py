@@ -1,5 +1,5 @@
 # utils/__init__.py
 
-from .parser import FunctionManager
+from .function_manager import FunctionManager
 
 __all__ = ['FunctionManager']
