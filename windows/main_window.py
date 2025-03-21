@@ -1,15 +1,15 @@
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import uic
 
-from function_manager import FunctionManager
+from function_manager_helper import FunctionManagerHelper
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        uic.loadUi('gui/windows/main.ui', self)
+        uic.loadUi('gui/ui/main.ui', self)
 
-        self.function_manager = FunctionManager('functions.json')
+        self.function_manager = FunctionManagerHelper('functions.json')
         self.selectFunctionComboBox.clear()
 
         self.selectFunctionComboBox.addItems(self.function_manager.get_function_names())

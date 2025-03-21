@@ -1,7 +1,7 @@
 import json
 import numpy as np
 
-class FunctionManager:
+class FunctionManagerHelper:
     def __init__(self, json_file_path=None):
         self.functions = []
         self.current_function_index = 0
