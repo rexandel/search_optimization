@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import uic
 
 from function_manager_helper import FunctionManagerHelper
+from windows.function_manager_window import FunctionManagerWindow
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -32,6 +33,7 @@ class MainWindow(QMainWindow):
         self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
         self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
         self.returnButton.clicked.connect(self.reset_view_to_default)
+        self.functionManagerButton.clicked.connect(self.show_function_manager_window)
 
     def toggle_grid_visibility(self, state):
         self.openGLWidget.grid_visible = bool(state)
@@ -55,3 +57,8 @@ class MainWindow(QMainWindow):
         else:
             self.openGLWidget.set_function(None)
             self.statusbar.showMessage("No function selected")
+
+    def show_function_manager_window(self):
+        function_manager_window = FunctionManagerWindow(self)
+
+        function_manager_window.exec_()

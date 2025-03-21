@@ -89,7 +89,7 @@
        <widget class="Visualization3DWidget" name="openGLWidget"/>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="5,1,1">
         <item>
          <widget class="QTabWidget" name="tabWidget">
           <property name="currentIndex">
@@ -138,34 +138,53 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="selectFunctionComboBox"/>
+         <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0">
+          <item>
+           <widget class="QComboBox" name="selectFunctionComboBox"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="functionManagerButton">
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>../images/setting.png</normaloff>../images/setting.png</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item>
-         <widget class="QCheckBox" name="gridVisibility">
-          <property name="text">
-           <string>Grid Visibility</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="axisVisibility">
-          <property name="text">
-           <string>Axis Visibility</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="returnButton">
-          <property name="text">
-           <string>Return to initial state</string>
-          </property>
-         </widget>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QCheckBox" name="axisVisibility">
+            <property name="text">
+             <string>Axis Visibility</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="gridVisibility">
+            <property name="text">
+             <string>Grid Visibility</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="returnButton">
+            <property name="text">
+             <string>Return to initial state</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </item>
