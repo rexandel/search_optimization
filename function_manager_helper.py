@@ -84,5 +84,6 @@ class FunctionManagerHelper:
 
     def populate_combo_box(self, combo_box):
         combo_box.clear()
-        for func in self.functions:
-            combo_box.addItem(func['name'])
+        if len(self.functions) > 0:
+            for func in self.functions:
+                combo_box.addItem(func['name'])
