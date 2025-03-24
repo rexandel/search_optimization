@@ -8,6 +8,7 @@ from utils.log_emitter import LogEmitter
 
 import threading
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -23,6 +24,7 @@ class MainWindow(QMainWindow):
         self.selectFunctionComboBox.currentIndexChanged.connect(self.on_function_selected)
 
         self.gradient_descent = None
+        self.optimization_thread = None
 
         if len(self.function_manager_helper.get_function_names()) > 0:
             current_func = self.function_manager_helper.get_current_function()
@@ -74,7 +76,6 @@ class MainWindow(QMainWindow):
 
     def show_function_manager_window(self):
         function_manager_window = FunctionManagerWindow(self)
-
         function_manager_window.exec_()
 
     def on_start_button_clicked(self):
@@ -139,8 +140,19 @@ class MainWindow(QMainWindow):
         }
 
         self.gradient_descent = GradientDescent(params, self.log_emitter)
+        self.gradient_descent.finished_signal.connect(self.on_optimization_finished)
+
+        self.optimization_thread = threading.Thread(target=self.gradient_descent.run, daemon=True)
+        self.optimization_thread.start()
+
         self.statusbar.showMessage("Optimization started")
-        threading.Thread(target=self.gradient_descent.run, daemon=True).start()
+
+    @QtCore.pyqtSlot()
+    def on_optimization_finished(self):
+        self.gridGroupBox.setEnabled(True)
+        self.startButton.setEnabled(True)
+        self.stopButton.setEnabled(False)
+        self.statusbar.showMessage("Optimization finished")
 
     def on_stop_button_clicked(self):
         if self.gradient_descent:

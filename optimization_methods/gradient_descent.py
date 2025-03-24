@@ -1,9 +1,14 @@
+from PyQt5.QtCore import QObject, pyqtSignal
 from utils.gradient_helper import GradientHelper
 from utils.log_emitter import LogEmitter
+import time
 
 
-class GradientDescent:
+class GradientDescent(QObject):
+    finished_signal = pyqtSignal()
+
     def __init__(self, params_dict, log_emitter: LogEmitter):
+        super().__init__()
         self.pointX = params_dict['point'][0]
         self.pointY = params_dict['point'][1]
         self.firstEps = params_dict['epsilons'][0]
@@ -15,7 +20,6 @@ class GradientDescent:
 
         self._gradient_helper = GradientHelper(self.function)
         self.log_emitter = log_emitter
-
         self._is_running = False
 
     def run(self):
@@ -27,13 +31,16 @@ class GradientDescent:
                 if not self._is_running:
                     break
 
-                message = f"Iteration {i+1}: Current point ({self.pointX}, {self.pointY})"
+                message = f"Iteration {i + 1}: Current point ({self.pointX}, {self.pointY})"
                 self.log_emitter.log_signal.emit(message)
+                time.sleep(1)
 
+            self.log_emitter.log_signal.emit("Optimization finished")
         except Exception as e:
             self.log_emitter.log_signal.emit(f"Error: {str(e)}")
-
-        self.log_emitter.log_signal.emit("Optimization finished")
+        finally:
+            self._is_running = False
+            self.finished_signal.emit()
 
     def stop(self):
         self._is_running = False
