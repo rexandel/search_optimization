@@ -35,7 +35,6 @@ class GradientDescent(QObject):
                 self.log_emitter.log_signal.emit(message)
                 time.sleep(1)
 
-            self.log_emitter.log_signal.emit("Optimization finished")
         except Exception as e:
             self.log_emitter.log_signal.emit(f"Error: {str(e)}")
         finally:

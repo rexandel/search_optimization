@@ -152,7 +152,7 @@ class MainWindow(QMainWindow):
         self.gridGroupBox.setEnabled(True)
         self.startButton.setEnabled(True)
         self.stopButton.setEnabled(False)
-        self.statusbar.showMessage("Optimization finished")
+        self.append_log_message("Optimization finished")
 
     def on_stop_button_clicked(self):
         if self.gradient_descent:
