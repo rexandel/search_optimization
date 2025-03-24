@@ -103,8 +103,11 @@ class MainWindow(QMainWindow):
             return
 
         self.logEventPlainTextEdit.clear()
-        self.stopButton.setEnabled(True)
+        self.gridGroupBox.setEnabled(False)
         self.startButton.setEnabled(False)
+        self.stopButton.setEnabled(True)
+
+
 
         params = {
             'point': (x, y),
