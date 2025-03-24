@@ -1,5 +1,9 @@
-class GradientDescentParams:
-    def __init__(self, params_dict):
+from utils.gradient_helper import GradientHelper
+from utils.log_emitter import LogEmitter
+
+
+class GradientDescent:
+    def __init__(self, params_dict, log_emitter: LogEmitter):
         self.pointX = params_dict['point'][0]
         self.pointY = params_dict['point'][1]
         self.firstEps = params_dict['epsilons'][0]
@@ -8,6 +12,31 @@ class GradientDescentParams:
         self.initial_step = params_dict['initial_step']
         self.max_iterations = params_dict['max_iterations']
         self.function = params_dict['function']
+
+        self._gradient_helper = GradientHelper(self.function)
+        self.log_emitter = log_emitter
+
+        self._is_running = False
+
+    def run(self):
+        self._is_running = True
+        self.log_emitter.log_signal.emit("Starting gradient descent...")
+
+        try:
+            for i in range(self.max_iterations):
+                if not self._is_running:
+                    break
+
+                message = f"Iteration {i+1}: Current point ({self.pointX}, {self.pointY})"
+                self.log_emitter.log_signal.emit(message)
+
+        except Exception as e:
+            self.log_emitter.log_signal.emit(f"Error: {str(e)}")
+
+        self.log_emitter.log_signal.emit("Optimization finished")
+
+    def stop(self):
+        self._is_running = False
 
     @property
     def pointX(self):

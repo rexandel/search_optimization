@@ -1,8 +1,12 @@
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5 import uic
+from PyQt5.QtWidgets import QMainWindow, QPlainTextEdit
+from PyQt5 import uic, QtCore
 
 from function_manager_helper import FunctionManagerHelper
 from windows.function_manager_window import FunctionManagerWindow
+from optimization_methods.gradient_descent import GradientDescent
+from utils.log_emitter import LogEmitter
+
+import threading
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -10,9 +14,15 @@ class MainWindow(QMainWindow):
 
         uic.loadUi('gui/ui/main.ui', self)
 
+        self.log_emitter = LogEmitter()
+        self.log_emitter.log_signal.connect(self.append_log_message)
+        self.log_emitter.html_log_signal.connect(self.append_html_log_message)
+
         self.function_manager_helper = FunctionManagerHelper('functions.json')
         self.function_manager_helper.populate_combo_box(self.selectFunctionComboBox)
         self.selectFunctionComboBox.currentIndexChanged.connect(self.on_function_selected)
+
+        self.gradient_descent = None
 
         if len(self.function_manager_helper.get_function_names()) > 0:
             current_func = self.function_manager_helper.get_current_function()
@@ -25,6 +35,19 @@ class MainWindow(QMainWindow):
         self.returnButton.clicked.connect(self.reset_view_to_default)
         self.functionManagerButton.clicked.connect(self.show_function_manager_window)
         self.startButton.clicked.connect(self.on_start_button_clicked)
+        self.stopButton.clicked.connect(self.on_stop_button_clicked)
+
+    @QtCore.pyqtSlot(str)
+    def append_log_message(self, message: str):
+        self.logEventPlainTextEdit.appendPlainText(message)
+
+    @QtCore.pyqtSlot(str)
+    def append_html_log_message(self, html: str):
+        cursor = self.logEventPlainTextEdit.textCursor()
+        cursor.movePosition(cursor.End)
+        cursor.insertHtml(html)
+        self.logEventPlainTextEdit.setTextCursor(cursor)
+        self.logEventPlainTextEdit.ensureCursorVisible()
 
     def toggle_grid_visibility(self, state):
         self.openGLWidget.grid_visible = bool(state)
@@ -107,8 +130,6 @@ class MainWindow(QMainWindow):
         self.startButton.setEnabled(False)
         self.stopButton.setEnabled(True)
 
-
-
         params = {
             'point': (x, y),
             'epsilons': (first_eps, sec_eps, third_eps),
@@ -117,4 +138,13 @@ class MainWindow(QMainWindow):
             'function': self.function_manager_helper.get_current_function()['function']
         }
 
+        self.gradient_descent = GradientDescent(params, self.log_emitter)
         self.statusbar.showMessage("Optimization started")
+        threading.Thread(target=self.gradient_descent.run, daemon=True).start()
+
+    def on_stop_button_clicked(self):
+        if self.gradient_descent:
+            self.gradient_descent.stop()
+            self.stopButton.setEnabled(False)
+            self.startButton.setEnabled(True)
+            self.statusbar.showMessage("Optimization stopped")
