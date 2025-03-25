@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QPlainTextEdit
 from PyQt5 import uic, QtCore
+from PyQt5.QtCore import Qt
 
 from function_manager_helper import FunctionManagerHelper
 from windows.function_manager_window import FunctionManagerWindow
@@ -38,6 +39,15 @@ class MainWindow(QMainWindow):
         self.functionManagerButton.clicked.connect(self.show_function_manager_window)
         self.startButton.clicked.connect(self.on_start_button_clicked)
         self.stopButton.clicked.connect(self.on_stop_button_clicked)
+
+        self.setFocusPolicy(Qt.StrongFocus)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            if self.startButton.isEnabled():
+                self.on_start_button_clicked()
+        else:
+            super().keyPressEvent(event)
 
     @QtCore.pyqtSlot(str)
     def append_log_message(self, message: str):
