@@ -1,5 +1,4 @@
 from PyQt5.QtCore import QObject, pyqtSignal
-from autograd import grad
 import numpy as np
 import time
 
@@ -24,7 +23,16 @@ class GradientDescent(QObject):
         self.initial_delay = 0.05
         self.min_delay = 0.001
 
-        self.grad_func = grad(self.function, argnum=[0, 1])
+    def _compute_gradient(self, x, y, h=1e-5):
+        fx_plus = self.function(x + h, y)
+        fx_minus = self.function(x - h, y)
+        df_dx = (fx_plus - fx_minus) / (2 * h)
+
+        fy_plus = self.function(x, y + h)
+        fy_minus = self.function(x, y - h)
+        df_dy = (fy_plus - fy_minus) / (2 * h)
+
+        return df_dx, df_dy
 
     def run(self):
         self._is_running = True
@@ -41,7 +49,7 @@ class GradientDescent(QObject):
                     self.log_emitter.log_signal.emit("⏹ Optimization stopped by user")
                     break
 
-                grad_x, grad_y = self.grad_func(x[0], x[1])
+                grad_x, grad_y = self._compute_gradient(x[0], x[1])
                 current_grad = np.array([grad_x, grad_y])
                 grad_norm = np.linalg.norm(current_grad)
 
