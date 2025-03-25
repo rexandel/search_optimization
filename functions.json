@@ -35,6 +35,12 @@
       "formula": "f(x,y) = (1.5 - x + x*y)^2 + (2.25 - x + x*y^2)^2 + (2.625 - x + x*y^3)^2",
       "latex_formula": "$f(x, y) = (1.5 - x + x \\cdot y)^2 + (2.25 - x + x \\cdot y^2)^2 + (2.625 - x + x \\cdot y^3)^2$",
       "python_formula": "lambda x, y: (1.5 - x + x*y)**2 + (2.25 - x + x*y**2)**2 + (2.625 - x + x*y**3)**2"
+    },
+    {
+      "name": "Test Function",
+      "formula": "f(x,y) = 2 * x^2 + x * y + y^2",
+      "latex_formula": null,
+      "python_formula": "lambda x, y: 2*x**2 + x*y + y**2"
     }
   ]
 }

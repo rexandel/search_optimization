@@ -109,7 +109,7 @@ class MainWindow(QMainWindow):
             return
 
         try:
-            initial_step = int(data['initial_step'])
+            initial_step = float(data['initial_step'])
             if initial_step <= 0:
                 self.statusbar.showMessage("Error: Initial step must be a positive integer")
                 return
@@ -138,6 +138,8 @@ class MainWindow(QMainWindow):
             'max_iterations': num_iter,
             'function': self.function_manager_helper.get_current_function()['function']
         }
+
+        self.statusbar.showMessage("Test")
 
         self.gradient_descent = GradientDescent(params, self.log_emitter)
         self.gradient_descent.finished_signal.connect(self.on_optimization_finished)

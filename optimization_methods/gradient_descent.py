@@ -1,13 +1,13 @@
 from PyQt5.QtCore import QObject, pyqtSignal
-from utils.gradient_helper import GradientHelper
-from utils.log_emitter import LogEmitter
+from autograd import grad
+import numpy as np
 import time
 
 
 class GradientDescent(QObject):
     finished_signal = pyqtSignal()
 
-    def __init__(self, params_dict, log_emitter: LogEmitter):
+    def __init__(self, params_dict, log_emitter):
         super().__init__()
         self.pointX = params_dict['point'][0]
         self.pointY = params_dict['point'][1]
@@ -18,31 +18,81 @@ class GradientDescent(QObject):
         self.max_iterations = params_dict['max_iterations']
         self.function = params_dict['function']
 
-        self._gradient_helper = GradientHelper(self.function)
         self.log_emitter = log_emitter
         self._is_running = False
 
+        self.grad_func = grad(self.function, argnum=[0, 1])
+
     def run(self):
         self._is_running = True
-        self.log_emitter.log_signal.emit("Starting gradient descent...")
+        self.log_emitter.log_signal.emit("🔹 Optimization started...")
 
         try:
-            for i in range(self.max_iterations):
+            x = np.array([self.pointX, self.pointY])
+            t = self.initial_step
+            prev_func_value = self.function(x[0], x[1])
+
+            for k in range(self.max_iterations):
                 if not self._is_running:
+                    self.log_emitter.log_signal.emit("⏹ Optimization stopped by user")
                     break
 
-                message = f"Iteration {i + 1}: Current point ({self.pointX}, {self.pointY})"
+                grad_x, grad_y = self.grad_func(x[0], x[1])
+                current_grad = np.array([grad_x, grad_y])
+                grad_norm = np.linalg.norm(current_grad)
+
+                message = (
+                    f"Iteration {k + 1}:\n"
+                    f"📍 Point: ({x[0]:.6f}, {x[1]:.6f})\n"
+                    f"📉 Function value: {prev_func_value:.6f}\n"
+                    f"🔽 Step size: {t:.6f}\n"
+                    f"------------------------------------\n"
+                )
                 self.log_emitter.log_signal.emit(message)
-                time.sleep(1)
+
+                if grad_norm < self.firstEps:
+                    self.log_emitter.log_signal.emit(
+                        f"✅ Stopping: Gradient norm {grad_norm:.6f} < {self.firstEps}"
+                    )
+                    break
+
+                nx = x - t * current_grad
+                current_func_value = self.function(nx[0], nx[1])
+                func_diff = current_func_value - prev_func_value
+
+                if func_diff < 0:
+                    step_diff = np.linalg.norm(nx - x)
+
+                    if step_diff < self.secondEps and abs(func_diff) < self.secondEps:
+                        self.log_emitter.log_signal.emit("✅ Stopping: Small step and function change")
+                        x = nx
+                        break
+
+                    x = nx
+                    prev_func_value = current_func_value
+                else:
+                    t /= 2
+                    self.log_emitter.log_signal.emit(f"🔻 Reducing step size to: {t:.6f}")
+
+                # time.sleep(0.1)
+
+            self.pointX, self.pointY = float(x[0]), float(x[1])
+            final_message = (
+                "🎉 Optimization finished!\n"
+                f"🏁 Final point: ({x[0]:.6f}, {x[1]:.6f})\n"
+                f"📊 Final value: {prev_func_value:.6f}"
+            )
+            self.log_emitter.log_signal.emit(final_message)
 
         except Exception as e:
-            self.log_emitter.log_signal.emit(f"Error: {str(e)}")
+            self.log_emitter.log_signal.emit(f"❌ Error: {str(e)}")
         finally:
             self._is_running = False
             self.finished_signal.emit()
 
     def stop(self):
         self._is_running = False
+        self.log_emitter.log_signal.emit("⏸ Optimization paused")
 
     @property
     def pointX(self):
@@ -100,8 +150,8 @@ class GradientDescent(QObject):
 
     @initial_step.setter
     def initial_step(self, value):
-        if not isinstance(value, int) or value <= 0:
-            raise ValueError("Initial step must be positive integer")
+        if not isinstance(value, float) or value <= 0:
+            raise ValueError("Initial step must be positive float")
         self._initial_step = value
 
     @property
