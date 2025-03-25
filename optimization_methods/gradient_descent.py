@@ -6,6 +6,7 @@ import time
 
 class GradientDescent(QObject):
     finished_signal = pyqtSignal()
+    update_signal = pyqtSignal(np.ndarray)
 
     def __init__(self, params_dict, log_emitter):
         super().__init__()
@@ -20,6 +21,8 @@ class GradientDescent(QObject):
 
         self.log_emitter = log_emitter
         self._is_running = False
+        self.initial_delay = 0.05
+        self.min_delay = 0.001
 
         self.grad_func = grad(self.function, argnum=[0, 1])
 
@@ -32,6 +35,7 @@ class GradientDescent(QObject):
             t = self.initial_step
             prev_func_value = self.function(x[0], x[1])
 
+            points = [x.copy()]
             for k in range(self.max_iterations):
                 if not self._is_running:
                     self.log_emitter.log_signal.emit("⏹ Optimization stopped by user")
@@ -65,16 +69,22 @@ class GradientDescent(QObject):
 
                     if step_diff < self.secondEps and abs(func_diff) < self.secondEps:
                         self.log_emitter.log_signal.emit("✅ Stopping: Small step and function change")
+                        points.append(nx.copy())
                         x = nx
                         break
 
                     x = nx
                     prev_func_value = current_func_value
+                    points.append(x.copy())
+                    self.update_signal.emit(np.array(points))
                 else:
                     t /= 2
                     self.log_emitter.log_signal.emit(f"🔻 Reducing step size to: {t:.6f}")
 
-                # time.sleep(0.1)
+                delay = max(self.min_delay, self.initial_delay * (0.95 ** k))
+                time.sleep(delay)
+
+            self.optimization_path = np.array(points)
 
             self.pointX, self.pointY = float(x[0]), float(x[1])
             final_message = (
@@ -87,6 +97,7 @@ class GradientDescent(QObject):
         except Exception as e:
             self.log_emitter.log_signal.emit(f"❌ Error: {str(e)}")
         finally:
+            self.update_signal.emit(np.array(points))
             self._is_running = False
             self.finished_signal.emit()
 

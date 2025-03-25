@@ -139,14 +139,13 @@ class MainWindow(QMainWindow):
             'function': self.function_manager_helper.get_current_function()['function']
         }
 
-        self.statusbar.showMessage("Test")
-
         self.gradient_descent = GradientDescent(params, self.log_emitter)
         self.gradient_descent.finished_signal.connect(self.on_optimization_finished)
 
         self.optimization_thread = threading.Thread(target=self.gradient_descent.run, daemon=True)
         self.optimization_thread.start()
 
+        self.gradient_descent.update_signal.connect(self.openGLWidget.update_optimization_path)
         self.statusbar.showMessage("Optimization started")
 
     @QtCore.pyqtSlot()
