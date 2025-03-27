@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>557</height>
+    <width>900</width>
+    <height>650</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -53,7 +53,7 @@
    <item row="1" column="1">
     <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,2,0,2,0,4,0,1">
      <item>
-      <layout class="QHBoxLayout" name="allFunctionsHorizontalLayout" stretch="0,0,1,0,0,0">
+      <layout class="QHBoxLayout" name="allFunctionsHorizontalLayout" stretch="0,1,3,0">
        <item>
         <spacer name="allFuncLeftHorizontalSpacer">
          <property name="orientation">
@@ -69,40 +69,55 @@
        </item>
        <item>
         <widget class="QLabel" name="allFunctionsLabel">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
          <property name="text">
-          <string>All functions:</string>
+          <string>List of all functions:</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="selectFunctionComboBox"/>
-       </item>
-       <item>
-        <spacer name="allFuncMiddleHorizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>10</width>
-           <height>10</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QPushButton" name="addNewFunction">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>../images/add.png</normaloff>../images/add.png</iconset>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,0,0">
+         <item>
+          <widget class="QComboBox" name="selectFunctionComboBox">
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="allFuncMiddleHorizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>10</width>
+             <height>10</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="addNewFunction">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../images/add.png</normaloff>../images/add.png</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <spacer name="allFuncRightHorizontalSpacer">
@@ -136,7 +151,7 @@
       </spacer>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="inputNamehorizontalLayout" stretch="0,0,0,1,0">
+      <layout class="QHBoxLayout" name="inputNamehorizontalLayout" stretch="0,1,3,0">
        <item>
         <spacer name="nameLeftHorizontalSpacer">
          <property name="orientation">
@@ -152,26 +167,15 @@
        </item>
        <item>
         <widget class="QLabel" name="functionNameLabel">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>Enter function name:</string>
          </property>
         </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>50</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
        </item>
        <item>
         <widget class="QLineEdit" name="functionNameLineEdit">
@@ -220,7 +224,7 @@
       </spacer>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="inputFormulahorizontalLayout" stretch="0,0,0,1,0">
+      <layout class="QHBoxLayout" name="inputFormulahorizontalLayout" stretch="0,1,3,0">
        <item>
         <spacer name="formulaLeftHorizontalSpacer">
          <property name="orientation">
@@ -236,31 +240,20 @@
        </item>
        <item>
         <widget class="QLabel" name="functionFormulaLabel">
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
          <property name="text">
           <string>Enter function formula:</string>
          </property>
         </widget>
        </item>
        <item>
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
         <widget class="QLineEdit" name="formulaLineEdit">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+          <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -351,7 +344,7 @@
        <item>
         <widget class="QPushButton" name="okButton">
          <property name="text">
-          <string>Add</string>
+          <string>Create</string>
          </property>
         </widget>
        </item>
@@ -391,7 +384,7 @@
        <item>
         <widget class="QPushButton" name="cancelButton">
          <property name="text">
-          <string>Cancel</string>
+          <string>Delete</string>
          </property>
         </widget>
        </item>
