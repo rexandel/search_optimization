@@ -137,7 +137,8 @@ class MainWindow(QMainWindow):
             return
 
         self.logEventPlainTextEdit.clear()
-        self.gridGroupBox.setEnabled(False)
+        self.tabWidget.setEnabled(False)
+        self.selectFunctionComboBox.setEnabled(False)
         self.startButton.setEnabled(False)
         self.stopButton.setEnabled(True)
 
@@ -160,7 +161,8 @@ class MainWindow(QMainWindow):
 
     @QtCore.pyqtSlot()
     def on_optimization_finished(self):
-        self.gridGroupBox.setEnabled(True)
+        self.tabWidget.setEnabled(True)
+        self.selectFunctionComboBox.setEnabled(True)
         self.startButton.setEnabled(True)
         self.stopButton.setEnabled(False)
         self.append_log_message("Optimization finished")
@@ -170,4 +172,3 @@ class MainWindow(QMainWindow):
             self.gradient_descent.stop()
             self.stopButton.setEnabled(False)
             self.startButton.setEnabled(True)
-            self.statusbar.showMessage("Optimization stopped")

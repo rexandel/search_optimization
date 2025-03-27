@@ -46,7 +46,6 @@ class GradientDescent(QObject):
             points = [x.copy()]
             for k in range(self.max_iterations):
                 if not self._is_running:
-                    self.log_emitter.log_signal.emit("⏹ Optimization stopped by user")
                     break
 
                 grad_x, grad_y = self._compute_gradient(x[0], x[1])
@@ -62,7 +61,7 @@ class GradientDescent(QObject):
                 )
                 self.log_emitter.log_signal.emit(message)
 
-                if grad_norm < self.firstEps:
+                if grad_norm < self.firstEps:  # First stop condition
                     self.log_emitter.log_signal.emit(
                         f"✅ Stopping: Gradient norm {grad_norm:.6f} < {self.firstEps}"
                     )
@@ -75,7 +74,7 @@ class GradientDescent(QObject):
                 if func_diff < 0:
                     step_diff = np.linalg.norm(nx - x)
 
-                    if step_diff < self.secondEps and abs(func_diff) < self.secondEps:
+                    if step_diff < self.secondEps and abs(func_diff) < self.secondEps:  # Second stop condition
                         self.log_emitter.log_signal.emit("✅ Stopping: Small step and function change")
                         points.append(nx.copy())
                         x = nx
@@ -111,7 +110,7 @@ class GradientDescent(QObject):
 
     def stop(self):
         self._is_running = False
-        self.log_emitter.log_signal.emit("⏸ Optimization paused")
+        self.log_emitter.log_signal.emit("⏹ Optimization stopped by user")
 
     @property
     def pointX(self):
