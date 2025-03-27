@@ -1,11 +1,10 @@
-from PyQt5.QtWidgets import QMainWindow, QPlainTextEdit
+from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import uic, QtCore
 from PyQt5.QtCore import Qt
 
-from function_manager_helper import FunctionManagerHelper
-from windows.function_manager_window import FunctionManagerWindow
-from optimization_methods.gradient_descent import GradientDescent
-from utils.log_emitter import LogEmitter
+from windows import FunctionManagerWindow
+from optimization_methods import GradientDescent
+from utils import LogEmitter, FunctionManagerHelper
 
 import threading
 

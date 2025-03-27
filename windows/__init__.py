@@ -1,6 +1,6 @@
 # windows/__init__.py
 
-from .main_window import MainWindow
 from .function_manager_window import FunctionManagerWindow
+from .main_window import MainWindow
 
-__all__ = ["MainWindow", "FunctionManagerWindow"]
+__all__ = ["FunctionManagerWindow", "MainWindow"]

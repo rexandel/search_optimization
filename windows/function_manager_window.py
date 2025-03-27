@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import QDialog
 from PyQt5 import uic
 
-from function_manager_helper import FunctionManagerHelper
+from utils import FunctionManagerHelper
+
 
 class FunctionManagerWindow(QDialog):
     def __init__(self, parent=None):
