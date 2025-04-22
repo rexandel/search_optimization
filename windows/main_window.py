@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import uic, QtCore
 from PyQt5.QtCore import Qt
+from sympy.strategies.core import switch
 
 from windows import FunctionManagerWindow
-from optimization_methods import GradientDescent
+from optimization_methods import GradientDescent, SimplexMethod
 from utils import LogEmitter, FunctionManagerHelper
 
 import threading
@@ -88,75 +89,80 @@ class MainWindow(QMainWindow):
         function_manager_window.exec_()
 
     def on_start_button_clicked(self):
-        data = {
-            'x': self.xLineEdit.text(),
-            'y': self.yLineEdit.text(),
-            'first_eps': self.firstEpsLineEdit.text(),
-            'sec_eps': self.secondEpsLineEdit.text(),
-            'third_eps': self.thirdEpsLineEdit.text(),
-            'initial_step': self.initialStepLineEdit.text(),
-            'num_iter': self.numIterLineEdit.text()
-        }
+        current_index = self.tabWidget.currentIndex()
 
-        try:
-            x = float(data['x'])
-            y = float(data['y'])
-        except ValueError:
-            self.statusbar.showMessage("Error: X and Y must be numeric values")
-            return
+        if current_index == 0:
+            data = {
+                'x': self.xLineEdit.text(),
+                'y': self.yLineEdit.text(),
+                'first_eps': self.firstEpsLineEdit.text(),
+                'sec_eps': self.secondEpsLineEdit.text(),
+                'third_eps': self.thirdEpsLineEdit.text(),
+                'initial_step': self.initialStepLineEdit.text(),
+                'num_iter': self.numIterLineEdit.text()
+            }
 
-        try:
-            first_eps = float(data['first_eps'])
-            sec_eps = float(data['sec_eps'])
-            third_eps = float(data['third_eps'])
-
-            if not (0 < first_eps < 1) or not (0 < sec_eps < 1) or not (0 < third_eps < 1):
-                self.statusbar.showMessage("Error: All epsilon values must be between 0 and 1")
+            try:
+                x = float(data['x'])
+                y = float(data['y'])
+            except ValueError:
+                self.statusbar.showMessage("Error: X and Y must be numeric values")
                 return
-        except ValueError:
-            self.statusbar.showMessage("Error: Epsilon parameters must be floating-point numbers")
-            return
 
-        try:
-            initial_step = float(data['initial_step'])
-            if initial_step <= 0:
+            try:
+                first_eps = float(data['first_eps'])
+                sec_eps = float(data['sec_eps'])
+                third_eps = float(data['third_eps'])
+
+                if not (0 < first_eps < 1) or not (0 < sec_eps < 1) or not (0 < third_eps < 1):
+                    self.statusbar.showMessage("Error: All epsilon values must be between 0 and 1")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Epsilon parameters must be floating-point numbers")
+                return
+
+            try:
+                initial_step = float(data['initial_step'])
+                if initial_step <= 0:
+                    self.statusbar.showMessage("Error: Initial step must be a positive integer")
+                    return
+            except ValueError:
                 self.statusbar.showMessage("Error: Initial step must be a positive integer")
                 return
-        except ValueError:
-            self.statusbar.showMessage("Error: Initial step must be a positive integer")
-            return
 
-        try:
-            num_iter = int(data['num_iter'])
-            if num_iter <= 0:
+            try:
+                num_iter = int(data['num_iter'])
+                if num_iter <= 0:
+                    self.statusbar.showMessage("Error: Number of iterations must be a positive integer")
+                    return
+            except ValueError:
                 self.statusbar.showMessage("Error: Number of iterations must be a positive integer")
                 return
-        except ValueError:
-            self.statusbar.showMessage("Error: Number of iterations must be a positive integer")
-            return
 
-        self.logEventPlainTextEdit.clear()
-        self.tabWidget.setEnabled(False)
-        self.selectFunctionComboBox.setEnabled(False)
-        self.startButton.setEnabled(False)
-        self.stopButton.setEnabled(True)
+            self.logEventPlainTextEdit.clear()
+            self.tabWidget.setEnabled(False)
+            self.selectFunctionComboBox.setEnabled(False)
+            self.startButton.setEnabled(False)
+            self.stopButton.setEnabled(True)
 
-        params = {
-            'point': (x, y),
-            'epsilons': (first_eps, sec_eps, third_eps),
-            'initial_step': initial_step,
-            'max_iterations': num_iter,
-            'function': self.function_manager_helper.get_current_function()['function']
-        }
+            params = {
+                'point': (x, y),
+                'epsilons': (first_eps, sec_eps, third_eps),
+                'initial_step': initial_step,
+                'max_iterations': num_iter,
+                'function': self.function_manager_helper.get_current_function()['function']
+            }
 
-        self.gradient_descent = GradientDescent(params, self.log_emitter)
-        self.gradient_descent.finished_signal.connect(self.on_optimization_finished)
+            self.gradient_descent = GradientDescent(params, self.log_emitter)
+            self.gradient_descent.finished_signal.connect(self.on_optimization_finished)
 
-        self.optimization_thread = threading.Thread(target=self.gradient_descent.run, daemon=True)
-        self.optimization_thread.start()
+            self.optimization_thread = threading.Thread(target=self.gradient_descent.run, daemon=True)
+            self.optimization_thread.start()
 
-        self.gradient_descent.update_signal.connect(self.openGLWidget.update_optimization_path)
-        self.statusbar.showMessage("Optimization started")
+            self.gradient_descent.update_signal.connect(self.openGLWidget.update_optimization_path)
+            self.statusbar.showMessage("Optimization started")
+        elif current_index == 1:
+            pass
 
     @QtCore.pyqtSlot()
     def on_optimization_finished(self):
