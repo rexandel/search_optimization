@@ -25,6 +25,7 @@ class MainWindow(QMainWindow):
         self.selectFunctionComboBox.currentIndexChanged.connect(self.on_function_selected)
 
         self.gradient_descent = None
+        self.simplex_method = None
         self.optimization_thread = None
 
         if len(self.function_manager_helper.get_function_names()) > 0:
@@ -39,6 +40,7 @@ class MainWindow(QMainWindow):
         self.functionManagerButton.clicked.connect(self.show_function_manager_window)
         self.startButton.clicked.connect(self.on_start_button_clicked)
         self.stopButton.clicked.connect(self.on_stop_button_clicked)
+        self.viewButton.clicked.connect(self.view_function_graph)
 
         self.setFocusPolicy(Qt.StrongFocus)
 
@@ -162,7 +164,47 @@ class MainWindow(QMainWindow):
             self.gradient_descent.update_signal.connect(self.openGLWidget.update_optimization_path)
             self.statusbar.showMessage("Optimization started")
         elif current_index == 1:
-            pass
+            try:
+                x_min = -5
+                x_max = 5
+                y_min = -5
+                y_max = 5
+                segments_x = int(self.simplexSegmentsXLineEdit.text())
+                segments_y = int(self.simplexSegmentsYLineEdit.text())
+
+                if x_min >= x_max or y_min >= y_max:
+                    self.statusbar.showMessage("Error: Min values must be less than max values")
+                    return
+                if segments_x <= 0 or segments_y <= 0:
+                    self.statusbar.showMessage("Error: Number of segments must be positive integers")
+                    return
+
+            except ValueError:
+                self.statusbar.showMessage("Error: All parameters must be numeric values")
+                return
+
+            self.logEventPlainTextEdit.clear()
+            self.tabWidget.setEnabled(False)
+            self.selectFunctionComboBox.setEnabled(False)
+            self.startButton.setEnabled(False)
+            self.stopButton.setEnabled(True)
+
+            params = {
+                'x_range': (x_min, x_max),
+                'y_range': (y_min, y_max),
+                'num_segments_x': segments_x,
+                'num_segments_y': segments_y,
+                'function': self.function_manager_helper.get_current_function()['function']
+            }
+
+            self.simplex_method = SimplexMethod(params, self.log_emitter)
+            self.simplex_method.finished_signal.connect(self.on_optimization_finished)
+            self.simplex_method.update_signal.connect(self.openGLWidget.update_optimization_path)
+
+            self.optimization_thread = threading.Thread(target=self.simplex_method.run, daemon=True)
+            self.optimization_thread.start()
+
+            self.statusbar.showMessage("Simplex method optimization started")
 
     @QtCore.pyqtSlot()
     def on_optimization_finished(self):
@@ -177,3 +219,89 @@ class MainWindow(QMainWindow):
             self.gradient_descent.stop()
             self.stopButton.setEnabled(False)
             self.startButton.setEnabled(True)
+        elif self.simplex_method:
+            self.simplex_method.stop()
+            self.stopButton.setEnabled(False)
+            self.startButton.setEnabled(True)
+
+    def view_function_graph(self):
+        current_func = self.function_manager_helper.get_current_function()
+
+        if not current_func:
+            self.statusbar.showMessage("No function selected!")
+            return
+
+        try:
+            import matplotlib.pyplot as plt
+            from mpl_toolkits.mplot3d import Axes3D
+            import numpy as np
+
+            x_min = -5
+            x_max = 5
+            y_min = -5
+            y_max = 5
+            segments_x = int(self.simplexSegmentsXLineEdit.text())
+            segments_y = int(self.simplexSegmentsYLineEdit.text())
+
+            params = {
+                'function': current_func['function'],
+                'x_range': (x_min, x_max),
+                'y_range': (y_min, y_max),
+                'num_segments_x': segments_x,
+                'num_segments_y': segments_y
+            }
+
+            grid_points, linear_approx = SimplexMethod.piecewise_linear_approximation_2d(
+                params['function'],
+                params['x_range'],
+                params['y_range'],
+                params['num_segments_x'],
+                params['num_segments_y']
+            )
+
+            fig = plt.figure(figsize=(10, 8))
+            ax = fig.add_subplot(111, projection='3d')
+
+            x_points, y_points = grid_points
+            colors = plt.cm.plasma(np.linspace(0, 1, len(linear_approx)))
+
+            for i, (approx, color) in enumerate(zip(linear_approx, colors)):
+                x1, x2 = approx['x_range']
+                y1, y2 = approx['y_range']
+
+                x_seg = np.linspace(x1, x2, 10)
+                y_seg = np.linspace(y1, y2, 10)
+                x_seg_grid, y_seg_grid = np.meshgrid(x_seg, y_seg)
+
+                a0, a1, a2 = approx['coefs']
+                z_seg_grid = a0 + a1 * x_seg_grid + a2 * y_seg_grid
+
+                surf = ax.plot_surface(x_seg_grid, y_seg_grid, z_seg_grid,
+                                       color=color, alpha=0.7, edgecolor='black',
+                                       linewidth=1.2, antialiased=True)
+
+                if i == 0:
+                    surf._facecolors2d = surf._facecolor3d
+                    surf._edgecolors2d = surf._edgecolor3d
+
+            for x in x_points:
+                y_line = np.linspace(y_min, y_max, 2)
+                z_line = np.zeros(2)
+                ax.plot([x, x], [y_min, y_max], [0, 0], 'k-', linewidth=0.7, alpha=0.5)
+
+            for y in y_points:
+                x_line = np.linspace(x_min, x_max, 2)
+                z_line = np.zeros(2)
+                ax.plot([x_min, x_max], [y, y], [0, 0], 'k-', linewidth=0.7, alpha=0.5)
+
+            ax.set_title(f"{current_func['name']} (Piecewise Linear Approximation)")
+            ax.set_xlabel('X')
+            ax.set_ylabel('Y')
+            ax.set_zlabel('Z')
+            plt.tight_layout()
+            plt.show()
+
+        except ValueError:
+            self.statusbar.showMessage("Error: Invalid segment values")
+        except Exception as e:
+            self.statusbar.showMessage(f"Error: {str(e)}")
