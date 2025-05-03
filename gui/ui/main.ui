@@ -573,6 +573,18 @@
          <layout class="QVBoxLayout" name="managmentVerticalLayout">
           <item>
            <layout class="QHBoxLayout" name="functionManagerHorizontalLayout" stretch="1,0">
+            <property name="leftMargin">
+             <number>10</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>10</number>
+            </property>
+            <property name="bottomMargin">
+             <number>5</number>
+            </property>
             <item>
              <widget class="QComboBox" name="selectFunctionComboBox">
               <property name="font">
@@ -597,6 +609,18 @@
           </item>
           <item>
            <layout class="QVBoxLayout" name="logVerticalLayout">
+            <property name="leftMargin">
+             <number>10</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>10</number>
+            </property>
+            <property name="bottomMargin">
+             <number>5</number>
+            </property>
             <item>
              <widget class="QLabel" name="logEventLabel">
               <property name="font">
@@ -625,6 +649,18 @@
           </item>
           <item>
            <layout class="QHBoxLayout" name="startStopHorizontalLayout">
+            <property name="leftMargin">
+             <number>10</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>10</number>
+            </property>
+            <property name="bottomMargin">
+             <number>5</number>
+            </property>
             <item>
              <widget class="QPushButton" name="startButton">
               <property name="text">
@@ -648,6 +684,18 @@
         </item>
         <item>
          <layout class="QVBoxLayout" name="settingsVerticalLayout">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <property name="bottomMargin">
+           <number>5</number>
+          </property>
           <item>
            <widget class="QLabel" name="label">
             <property name="font">
