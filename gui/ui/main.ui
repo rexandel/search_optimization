@@ -774,7 +774,7 @@
   <customwidget>
    <class>Visualization3DWidget</class>
    <extends>QOpenGLWidget</extends>
-   <header>visualization_3d_widget</header>
+   <header location="global">visualization_3d_widget.visualization_3d_widget</header>
   </customwidget>
  </customwidgets>
  <resources/>

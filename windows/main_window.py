@@ -155,6 +155,7 @@ class MainWindow(QMainWindow):
                 'function': self.function_manager_helper.get_current_function()['function']
             }
 
+            self.openGLWidget.set_connect_optimization_points(True)
             self.gradient_descent = GradientDescent(params, self.log_emitter)
             self.gradient_descent.finished_signal.connect(self.on_optimization_finished)
 
@@ -197,6 +198,7 @@ class MainWindow(QMainWindow):
                 'function': self.function_manager_helper.get_current_function()['function']
             }
 
+            self.openGLWidget.set_connect_optimization_points(False)
             self.simplex_method = SimplexMethod(params, self.log_emitter)
             self.simplex_method.finished_signal.connect(self.on_optimization_finished)
             self.simplex_method.update_signal.connect(self.openGLWidget.update_optimization_path)
