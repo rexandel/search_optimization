@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QLineEdit
 from PyQt5 import uic, QtCore
 from PyQt5.QtCore import Qt
 import numpy as np
@@ -35,6 +35,10 @@ class MainWindow(QMainWindow):
         else:
             self.statusbar.showMessage("No functions available")
 
+        self.current_tab_line_edits = []
+        self.update_current_tab_line_edits()
+        self.tabWidget.currentChanged.connect(self.on_tab_changed)
+
         self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
         self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
         self.returnButton.clicked.connect(self.reset_view_to_default)
@@ -43,11 +47,26 @@ class MainWindow(QMainWindow):
         self.stopButton.clicked.connect(self.on_stop_button_clicked)
         self.viewButton.clicked.connect(self.view_function_graph)
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
+        self.clearButton.clicked.connect(self.clear_all_line_edits)
 
         self.setFocusPolicy(Qt.StrongFocus)
 
+    def clear_all_line_edits(self):
+        for line_edit in self.current_tab_line_edits:
+            line_edit.clear()
+
+    def update_current_tab_line_edits(self):
+        self.current_tab_line_edits.clear()
+
+        current_tab = self.tabWidget.currentWidget()
+
+        if current_tab:
+            line_edits = current_tab.findChildren(QLineEdit)
+            self.current_tab_line_edits = line_edits
+
     def on_tab_changed(self, index):
         self.openGLWidget.update_optimization_path(np.array([]))
+        self.update_current_tab_line_edits()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
