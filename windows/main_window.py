@@ -30,8 +30,7 @@ class MainWindow(QMainWindow):
         self.optimization_thread = None
 
         if len(self.function_manager_helper.get_function_names()) > 0:
-            current_func = self.function_manager_helper.get_current_function()
-            self.openGLWidget.set_function(current_func['function'])
+            self.on_function_selected(0)
         else:
             self.statusbar.showMessage("No functions available")
 
@@ -99,18 +98,25 @@ class MainWindow(QMainWindow):
         self.openGLWidget.restore_default_view()
 
     def on_function_selected(self, index):
-        self.openGLWidget.update_optimization_path(np.array([]))
-        self.logEventPlainTextEdit.clear()
-        self.function_manager_helper.set_current_function(index)
-        current_func = self.function_manager_helper.get_current_function()
-
+        """Обработчик выбора функции из выпадающего списка"""
+        current_func = self.function_manager_helper.get_function_by_index(index)
         if current_func:
+            self.function_manager_helper.set_current_function(index)
+
+            # Очищаем предыдущие ограничения
+            self.openGLWidget.clear_constraints()
+
+            # Устанавливаем функцию для визуализации
             self.openGLWidget.set_function(current_func['function'])
-            formula_text = current_func['formula']
-            self.statusbar.showMessage(f"Selected function: {current_func['name']} - {formula_text}")
-        else:
-            self.openGLWidget.set_function(None)
-            self.statusbar.showMessage("No function selected")
+
+            # Добавляем ограничения из JSON
+            for constraint in current_func['constraints']:
+                self.openGLWidget.add_constraint(constraint['function'])
+
+            # Перестраиваем данные функции с учетом ограничений
+            self.openGLWidget.build_objective_function_data()
+
+            self.statusbar.showMessage(f"Selected function: {current_func['name']}")
 
     def show_function_manager_window(self):
         function_manager_window = FunctionManagerWindow(self)

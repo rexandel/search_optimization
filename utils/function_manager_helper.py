@@ -33,16 +33,32 @@ class FunctionManagerHelper:
                 continue
 
             try:
-                locals_dict = {'np': np}
+                # Парсинг основной функции
                 func_object = eval(func_data['python_formula'], {'np': np}, {})
+                test_value = func_object(0, 0)  # Тестируем функцию
 
-                test_value = func_object(0, 0)
+                # Парсинг ограничений
+                constraints = []
+                if 'constraints' in func_data and isinstance(func_data['constraints'], list):
+                    for constraint in func_data['constraints']:
+                        if 'python_formula' in constraint:
+                            try:
+                                constraint_func = eval(constraint['python_formula'], {'np': np}, {})
+                                test_constraint = constraint_func(0, 0)  # Тестируем ограничение
+                                constraints.append({
+                                    'name': constraint.get('name', 'Unnamed constraint'),
+                                    'formula': constraint.get('formula', ''),
+                                    'function': constraint_func
+                                })
+                            except Exception as e:
+                                print(f"Error creating constraint: {str(e)}")
 
                 self.functions.append({
                     'name': func_data['name'],
                     'formula': func_data['formula'],
                     'python_formula': func_data['python_formula'],
-                    'function': func_object
+                    'function': func_object,
+                    'constraints': constraints
                 })
             except Exception as e:
                 print(f"Error creating function {func_data['name']}: {str(e)}")
