@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import uic, QtCore
 from PyQt5.QtCore import Qt
+import numpy as np
 from sympy.strategies.core import switch
 
 from windows import FunctionManagerWindow
@@ -41,8 +42,12 @@ class MainWindow(QMainWindow):
         self.startButton.clicked.connect(self.on_start_button_clicked)
         self.stopButton.clicked.connect(self.on_stop_button_clicked)
         self.viewButton.clicked.connect(self.view_function_graph)
+        self.tabWidget.currentChanged.connect(self.on_tab_changed)
 
         self.setFocusPolicy(Qt.StrongFocus)
+
+    def on_tab_changed(self, index):
+        self.openGLWidget.update_optimization_path(np.array([]))
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
@@ -75,6 +80,8 @@ class MainWindow(QMainWindow):
         self.openGLWidget.restore_default_view()
 
     def on_function_selected(self, index):
+        self.openGLWidget.update_optimization_path(np.array([]))
+        self.logEventPlainTextEdit.clear()
         self.function_manager_helper.set_current_function(index)
         current_func = self.function_manager_helper.get_current_function()
 

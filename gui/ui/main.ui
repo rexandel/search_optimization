@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1700</width>
-    <height>850</height>
+    <width>1231</width>
+    <height>796</height>
    </rect>
   </property>
   <property name="palette">
@@ -83,8 +83,24 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="2">
-     <spacer name="leftHorizontalSpacer">
+    <item row="0" column="1">
+     <spacer name="upperVerticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>10</width>
+        <height>5</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="1" column="0">
+     <spacer name="rightHorizontalSpacer">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
@@ -99,8 +115,8 @@
       </property>
      </spacer>
     </item>
-    <item row="1" column="0">
-     <spacer name="rightHorizontalSpacer">
+    <item row="1" column="2">
+     <spacer name="leftHorizontalSpacer">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
@@ -131,29 +147,13 @@
       </property>
      </spacer>
     </item>
-    <item row="0" column="1">
-     <spacer name="upperVerticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>10</width>
-        <height>5</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
     <item row="1" column="1">
      <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,1">
       <item>
        <widget class="Visualization3DWidget" name="openGLWidget"/>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout" stretch="5,0,1">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,1">
         <property name="leftMargin">
          <number>5</number>
         </property>
@@ -169,7 +169,7 @@
         <item>
          <widget class="QTabWidget" name="tabWidget">
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="firstTab">
            <attribute name="title">
@@ -572,6 +572,34 @@
         <item>
          <layout class="QVBoxLayout" name="managmentVerticalLayout">
           <item>
+           <layout class="QHBoxLayout" name="clearButtonHorizontalLayout">
+            <property name="leftMargin">
+             <number>10</number>
+            </property>
+            <property name="topMargin">
+             <number>5</number>
+            </property>
+            <property name="rightMargin">
+             <number>10</number>
+            </property>
+            <property name="bottomMargin">
+             <number>5</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="clearButton">
+              <property name="font">
+               <font>
+                <pointsize>10</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Clear</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
            <layout class="QHBoxLayout" name="functionManagerHorizontalLayout" stretch="1,0">
             <property name="leftMargin">
              <number>10</number>
@@ -763,7 +791,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1700</width>
+     <width>1231</width>
      <height>21</height>
     </rect>
    </property>
