@@ -1,6 +1,5 @@
 import sympy as sp
-import json
-from itertools import product
+from prettytable import PrettyTable
 
 
 def dynamic_kkt_system(obj_func, constraints, variables):
@@ -114,7 +113,8 @@ def dynamic_kkt_system(obj_func, constraints, variables):
         'all_variables': all_variables,
         'lambdas': lambdas,
         'vs': vs,
-        'ws': ws
+        'ws': ws,
+        'variables': variables  # Добавьте этот ключ
     }
 
 
@@ -144,30 +144,25 @@ def add_artificial_variables(kkt_system, kkt_conditions):
 
     # Анализируем каждое уравнение системы
     for i, eq in enumerate(kkt_conditions):
-        # Преобразуем уравнение в формат левая_часть = правая_часть (первоначально все в левой части)
+        # Преобразуем уравнение в формат левая_часть = правая_часть
         left_part = eq
         right_part = 0
 
         # Проверяем наличие свободного члена
         free_term = left_part.as_coeff_add(*variables)[0]
 
-        # Определяем, какая дополнительная переменная (v_i или w_j) присутствует в уравнении
+        # Определяем, какая дополнительная переменная (v_i или w_j) присутствует
         if i < len(vs):
-            # Уравнение с v_i
-            dop_var = vs[i]  # v_i проверяется отдельно, т.к. в уравнении входит с отрицательным знаком
+            dop_var = vs[i]
             dop_var_name = f'v{i + 1}'
-            dop_var_sign = -1  # v_i входит с отрицательным знаком в уравнение
+            dop_var_sign = -1  # v_i входит с отрицательным знаком
         else:
-            # Уравнение с w_j
             dop_var = ws[i - len(vs)]
             dop_var_name = f'w{i - len(vs) + 1}'
-            dop_var_sign = 1  # w_j входит с положительным знаком в уравнение
+            dop_var_sign = 1  # w_j входит с положительным знаком
 
-        # Проверяем совпадение знаков:
-        # Если доп. переменная входит с отрицательным знаком и свободный член отрицательный,
-        # или доп. переменная входит с положительным знаком и свободный член положительный
+        # Проверяем совпадение знаков
         need_artificial = False
-
         if (dop_var_sign < 0 and free_term < 0) or (dop_var_sign > 0 and free_term > 0):
             need_artificial = True
 
@@ -176,61 +171,46 @@ def add_artificial_variables(kkt_system, kkt_conditions):
         print(f"  Доп. переменная: {dop_var_name} входит со знаком {'+' if dop_var_sign > 0 else '-'}")
         print(f"  Совпадение знаков: {'Да' if need_artificial else 'Нет'}")
 
+        # Переносим свободный член в правую часть
+        right_part_final = -free_term
+        modified_eq = left_part - free_term  # Убираем свободный член из левой части
+
         if need_artificial:
             # Создаем искусственную переменную z_i
             z_var = sp.symbols(f'z{i + 1}', real=True)
             z_vars.append(z_var)
 
             # Добавляем z_i в уравнение (z_i входит с положительным знаком)
-            modified_eq = left_part + z_var
+            modified_eq = modified_eq + z_var
 
             # Запоминаем выражение для z_i
             z_expressions[z_var] = -left_part
 
-            print(
-                f"В уравнение {i + 1} введена искусственная переменная z{i + 1}, т.к. совпал знак {dop_var_name} со знаком свободного члена {free_term}")
-            print(f"Уравнение с z{i + 1}: {modified_eq} = {right_part}")
+            print(f"В уравнение {i + 1} введена искусственная переменная z{i + 1}")
+            print(f"Уравнение с z{i + 1}: {modified_eq} = {right_part_final}")
         else:
-            modified_eq = left_part
             print(f"В уравнение {i + 1} не требуется вводить искусственную переменную")
-            print(f"Уравнение остается: {modified_eq} = {right_part}")
+            print(f"Уравнение остается: {modified_eq} = {right_part_final}")
 
         # Добавляем модифицированное уравнение
-        modified_equations.append((modified_eq, right_part))
+        modified_equations.append((modified_eq, right_part_final))
 
     # Формируем вспомогательную целевую функцию F(z) = sum(z_i)
     if z_vars:
         F_z = sum(z_vars)
-
-        # Выражаем F(z) через остальные переменные
         F_z_expanded = sum(z_expressions[z] for z in z_vars)
 
         print("\n### Вспомогательная функция ЛП ###")
         print(f"F(z) = {F_z}")
         print(f"F(z) = {F_z_expanded}")
 
-        # Приводим уравнения к окончательному виду (переносим свободные члены вправо)
+        # Выводим окончательную систему уравнений
         print("\n### Окончательная система уравнений ###")
         for i, (eq, right) in enumerate(modified_equations):
-            # Разделяем уравнение на части с переменными и свободный член
-            coeff_dict = {}
-            for var in variables + z_vars:
-                coeff = eq.coeff(var)
-                if coeff != 0:
-                    coeff_dict[var] = coeff
+            left_part_no_free = eq
+            print(f"Уравнение {i + 1}: {left_part_no_free} = {right}")
 
-            # Свободный член
-            free_term = eq.as_coeff_add(*(variables + z_vars))[0]
-
-            # Формируем левую часть уравнения без свободного члена
-            left_part_no_free = sum(coeff * var for var, coeff in coeff_dict.items())
-
-            # Правая часть уравнения (с противоположным знаком свободного члена)
-            right_part_final = right - free_term
-
-            print(f"Уравнение {i + 1}: {left_part_no_free} = {right_part_final}")
-
-        # Добавляем условия неотрицательности искусственных переменных
+        # Условия неотрицательности
         print("\n### Условия неотрицательности для искусственных переменных ###")
         for z in z_vars:
             print(f"{z} >= 0")
@@ -244,6 +224,57 @@ def add_artificial_variables(kkt_system, kkt_conditions):
         'F_z_expanded': F_z_expanded if z_vars else None,
         'modified_equations': modified_equations
     }
+
+def build_simplex_table(kkt_system, artificial_system):
+    """
+    Строит первую симплекс-таблицу для задачи ЛП на основе системы KKT с искусственными переменными.
+
+    Args:
+        kkt_system (dict): Результат работы функции dynamic_kkt_system.
+        artificial_system (dict): Результат работы функции add_artificial_variables.
+
+    Returns:
+        PrettyTable: Симплекс-таблица в виде объекта PrettyTable.
+    """
+    variables_order = (
+        kkt_system['variables'] +
+        kkt_system['lambdas'] +
+        kkt_system['vs'] +
+        kkt_system['ws'] +
+        artificial_system['z_vars']
+    )
+
+    headers = ['Базис', 'Св.член'] + [str(var) for var in variables_order]
+    table = PrettyTable(headers)
+    table.float_format = ".2f"  # Форматирование чисел
+
+    # Обрабатываем уравнения с искусственными переменными и ограничения
+    for eq, rhs in artificial_system['modified_equations']:
+        coeffs = [eq.coeff(var) for var in variables_order]
+        basis_var = None
+
+        # Определяем базисную переменную (искусственную или w)
+        for z_var in artificial_system['z_vars']:
+            if eq.coeff(z_var) == 1:
+                basis_var = z_var
+                break
+        if not basis_var:
+            for w_var in kkt_system['ws']:
+                if eq.coeff(w_var) == 1:
+                    basis_var = w_var
+                    break
+
+        row = [str(basis_var), rhs] + coeffs
+        table.add_row(row)
+
+    # Добавляем целевую функцию F
+    if artificial_system['F_z_expanded'] is not None:
+        f_coeffs = [-artificial_system['F_z_expanded'].coeff(var) for var in variables_order]
+        f_constant = artificial_system['F_z_expanded'].as_coeff_add(*variables_order)[0]
+        row = ['F', f_constant] + f_coeffs
+        table.add_row(row)
+
+    return table
 
 
 def solve_kkt_example():
@@ -271,6 +302,11 @@ def solve_kkt_example():
 
     # Добавление искусственных переменных
     artificial_system = add_artificial_variables(kkt_system, kkt_system['kkt_conditions'])
+
+    # Построение и вывод симплекс-таблицы
+    simplex_table = build_simplex_table(kkt_system, artificial_system)
+    print("\n### Первая симплекс-таблица ###")
+    print(simplex_table)
 
     print("\n### Система готова для решения ###")
     print("Чтобы решить систему, нужно исследовать все возможные комбинации")
