@@ -1,13 +1,36 @@
 {
   "functions": [
     {
-      "name": "My function",
+      "name": "Example of function solved in tutorial",
       "formula": "f(x,y) = 2 * x^2 + 2 * x * y + 2 * y^2 - 4 * x - 6 * y",
       "python_formula": "lambda x, y: 2 * x**2 + 2 * x * y + 2 * y**2 - 4 * x - 6 * y",
       "constraints": [
         {
           "formula": "x + 2 * y <= 2",
           "python_formula": "lambda x, y: x + 2 * y - 2"
+        },
+        {
+          "formula": "x >= 0",
+          "python_formula": "lambda x, y: -x"
+        },
+        {
+          "formula": "y >= 0",
+          "python_formula": "lambda x, y: -y"
+        }
+      ]
+    },
+    {
+      "name": "Example of function for homework",
+      "formula": "f(x,y) = 2 * x^2 + 3 * y^2 + 4 * x * y - 6 * x - 3 * y",
+      "python_formula": "lambda x, y: 2 * x ** 2 + 3 * y ** 2 + 4 * x * y - 6 * x - 3 * y",
+      "constraints": [
+        {
+          "formula": "x + y <= 1",
+          "python_formula": "lambda x, y: x + y - 1"
+        },
+        {
+          "formula": "2 * x + 3 * y <= 4",
+          "python_formula": "lambda x, y: 2 * x + 3 * y - 4"
         },
         {
           "formula": "x >= 0",

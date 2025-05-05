@@ -46,6 +46,15 @@ class SimplexMethod(QObject):
         self.log_emitter.log_signal.emit("🔹 KKT optimization started...")
 
         try:
+            # Log all constraints at the beginning
+            if self.constraints:
+                constraint_msg = ["### Optimization Constraints ###"]
+                for i, constr in enumerate(self.constraints, 1):
+                    constraint_msg.append(f"g{i}: {sp.pretty(constr)} <= 0")
+                self.log_emitter.log_signal.emit("\n".join(constraint_msg))
+            else:
+                self.log_emitter.log_signal.emit("### Optimization Constraints ###\nNo explicit constraints provided (assuming x >= 0, y >= 0)")
+
             # Шаг 1: Построение системы KKT
             self._build_kkt_system()
 
@@ -69,6 +78,8 @@ class SimplexMethod(QObject):
         finally:
             self._is_running = False
             self.finished_signal.emit()
+
+    # ... (other methods like _build_kkt_system, _solve_simplex, etc. remain unchanged as provided)
 
     def stop(self):
         self._is_running = False
@@ -220,7 +231,6 @@ class SimplexMethod(QObject):
 
         self._log_artificial_variables()
 
-
     def _log_artificial_variables(self):
         msg = ["### Artificial Variables ###"]
 
@@ -258,7 +268,6 @@ class SimplexMethod(QObject):
             msg.append("\nNo artificial variables needed.")
 
         self.log_emitter.log_signal.emit("\n".join(msg))
-
 
     def _build_simplex_table(self):
         self.log_emitter.log_signal.emit("🔧 Building simplex table...")
@@ -319,7 +328,6 @@ class SimplexMethod(QObject):
         }
 
         self.log_emitter.log_signal.emit("### Initial Simplex Table ###\n" + str(table))
-
 
     def _solve_simplex(self):
         self.log_emitter.log_signal.emit("🔧 Solving with simplex method...")
@@ -579,7 +587,6 @@ class SimplexMethod(QObject):
             # Emit final points
             self.update_signal.emit(np.array(self.points, dtype=float))
 
-
     def _log_simplex_iteration(self, iteration_info):
         msg = [
             f"\n### Iteration {iteration_info['iteration']} ###",
@@ -611,7 +618,6 @@ class SimplexMethod(QObject):
             msg.append(f"\nCurrent objective value: {iteration_info['objective_value']:.6f}")
 
         self.log_emitter.log_signal.emit("\n".join(msg))
-
 
     def _handle_final_solution(self, frac_rows, variables_order, z_vars, vs, ws, complementary_slackness):
         f_row = [row for row in frac_rows if row[0] == 'F'][0]
@@ -694,7 +700,6 @@ class SimplexMethod(QObject):
         self._log_final_solution(result)
         return result
 
-
     def _log_final_solution(self, final_solution):
         msg = ["\n### Final Solution ###"]
 
@@ -721,7 +726,6 @@ class SimplexMethod(QObject):
             msg.append(f"Artificial variables in basis: {final_solution['artificial_in_basis']}")
 
         self.log_emitter.log_signal.emit("\n".join(msg))
-
 
     def _verify_with_scipy(self):
         self.log_emitter.log_signal.emit("\n🔍 Verifying solution with scipy.optimize.minimize...")
@@ -785,11 +789,9 @@ class SimplexMethod(QObject):
 
         self.log_emitter.log_signal.emit("\n".join(msg))
 
-
     @property
     def function(self):
         return self._function
-
 
     @function.setter
     def function(self, value):
@@ -797,11 +799,9 @@ class SimplexMethod(QObject):
             raise ValueError("Function must be a sympy expression")
         self._function = value
 
-
     @property
     def constraints(self):
         return self._constraints
-
 
     @constraints.setter
     def constraints(self, value):
@@ -809,11 +809,9 @@ class SimplexMethod(QObject):
             raise ValueError("Constraints must be a list of sympy expressions")
         self._constraints = value
 
-
     @property
     def variables(self):
         return self._variables
-
 
     @variables.setter
     def variables(self, value):
@@ -821,11 +819,9 @@ class SimplexMethod(QObject):
             raise ValueError("Variables must be a list of sympy symbols")
         self._variables = value
 
-
     @property
     def max_iterations(self):
         return self._max_iterations
-
 
     @max_iterations.setter
     def max_iterations(self, value):
@@ -833,16 +829,13 @@ class SimplexMethod(QObject):
             raise ValueError("Max iterations must be a positive integer")
         self._max_iterations = value
 
-
     @property
     def is_running(self):
         return self._is_running
 
-
     @property
     def current_solution(self):
         return self._current_solution
-
 
     @current_solution.setter
     def current_solution(self, value):

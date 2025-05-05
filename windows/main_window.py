@@ -205,6 +205,7 @@ class MainWindow(QMainWindow):
                     'variables': symbolic_result['variables'],  # List of sympy.Symbol
                     'max_iterations': 100
                 }
+
                 # Создаем и запускаем оптимизатор
                 self.optimizer = SimplexMethod(params, self.log_emitter)
                 self.optimizer.run()
@@ -218,7 +219,6 @@ class MainWindow(QMainWindow):
                 self.optimization_thread.start()
 
                 self.statusbar.showMessage("Simplex method optimization started")
-
             else:
                 raise ValueError(symbolic_result['error'])
 

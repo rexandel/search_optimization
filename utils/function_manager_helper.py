@@ -136,12 +136,11 @@ class FunctionManagerHelper:
         transformations = (standard_transformations + (implicit_multiplication_application,))
 
         try:
-            # Extract expression from python_formula (e.g., 'lambda x, y: expr' -> 'expr')
+            # Parse objective function from python_formula
             python_formula = func_data['python_formula'].strip()
             if not python_formula:
                 raise ValueError("Empty python_formula string")
 
-            # Match 'lambda x, y: expression'
             match = re.match(r'^\s*lambda\s+x\s*,\s*y\s*:\s*(.+)$', python_formula)
             if not match:
                 raise ValueError("Invalid lambda expression format")
@@ -150,36 +149,53 @@ class FunctionManagerHelper:
             if not expr_str:
                 raise ValueError("Empty expression in lambda")
 
-            # Parse the objective function expression
             objective = parse_expr(
                 expr_str,
                 local_dict={'x': x, 'y': y},
                 transformations=transformations
             )
 
-            # Parse constraints, excluding x >= 0 and y >= 0
+            # Parse constraints from formula field
             constraints = []
             for constraint in func_data.get('constraints', []):
-                constraint_formula = constraint.get('python_formula', '').strip()
+                constraint_formula = constraint.get('formula', '').strip()
                 if not constraint_formula:
-                    print(f"Warning: Empty constraint python_formula for function {func_data['name']}")
+                    print(f"Warning: Empty constraint formula for function {func_data['name']}")
                     continue
 
                 try:
-                    # Extract expression from constraint python_formula
-                    match = re.match(r'^\s*lambda\s+x\s*,\s*y\s*:\s*(.+)$', constraint_formula)
-                    if not match:
-                        raise ValueError("Invalid constraint lambda expression format")
+                    # Split inequality (e.g., "x + 2 * y <= 2")
+                    if '<=' in constraint_formula:
+                        lhs, rhs = constraint_formula.split('<=', 1)
+                        inequality_type = '<='
+                    elif '>=' in constraint_formula:
+                        lhs, rhs = constraint_formula.split('>=', 1)
+                        inequality_type = '>='
+                    else:
+                        raise ValueError("Constraint formula must contain '<=' or '>='")
 
-                    constraint_expr_str = match.group(1).strip()
-                    if not constraint_expr_str:
-                        raise ValueError("Empty expression in constraint lambda")
+                    lhs = lhs.strip()
+                    rhs = rhs.strip()
+                    if not lhs or not rhs:
+                        raise ValueError("Invalid constraint formula: empty LHS or RHS")
 
-                    constraint_expr = parse_expr(
-                        constraint_expr_str,
+                    # Parse LHS and RHS
+                    lhs_expr = parse_expr(
+                        lhs,
                         local_dict={'x': x, 'y': y},
                         transformations=transformations
                     )
+                    rhs_expr = parse_expr(
+                        rhs,
+                        local_dict={'x': x, 'y': y},
+                        transformations=transformations
+                    )
+
+                    # Convert to g(x, y) <= 0
+                    if inequality_type == '<=':
+                        constraint_expr = lhs_expr - rhs_expr  # e.g., x + 2*y - 2
+                    else:  # '>='
+                        constraint_expr = rhs_expr - lhs_expr  # e.g., x >= 0 → 0 - (-x) = x
 
                     # Skip non-negativity constraints (x >= 0, y >= 0)
                     if constraint_expr == -x or constraint_expr == -y:
@@ -187,7 +203,7 @@ class FunctionManagerHelper:
 
                     constraints.append(constraint_expr)
                 except Exception as e:
-                    print(f"Error parsing constraint python_formula '{constraint_formula}': {str(e)}")
+                    print(f"Error parsing constraint formula '{constraint_formula}': {str(e)}")
                     continue
 
             return {
