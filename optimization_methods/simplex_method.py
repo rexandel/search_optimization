@@ -3,59 +3,166 @@ from prettytable import PrettyTable
 from fractions import Fraction
 import copy
 from scipy.optimize import minimize
-import numpy as np
+from PyQt5.QtCore import QObject, pyqtSignal
 
 
-def dynamic_kkt_system(obj_func, constraints, variables):
-    n_constraints = len(constraints)
-    lambdas = [sp.symbols(f'lambda{i + 1}', real=True) for i in range(n_constraints)]
-    vs = [sp.symbols(f'v{i + 1}', real=True) for i in range(len(variables))]
-    ws = [sp.symbols(f'w{i + 1}', real=True) for i in range(n_constraints)]
-    L = obj_func + sum(lambdas[i] * constraints[i] for i in range(n_constraints))
-    dL_dx = [sp.diff(L, var) for var in variables]
-    dL_dlambda = constraints
-    kkt_conditions = []
-    for i in range(len(variables)):
-        kkt_conditions.append(dL_dx[i] - vs[i])
-    for i in range(n_constraints):
-        kkt_conditions.append(dL_dlambda[i] + ws[i])
-    primal_feasibility = [constr <= 0 for constr in constraints] + [var >= 0 for var in variables]
-    dual_feasibility = [lam >= 0 for lam in lambdas] + [v >= 0 for v in vs] + [w >= 0 for w in ws]
-    complementary_slackness = [(variables[i], vs[i]) for i in range(len(variables))]
-    complementary_slackness += [(lambdas[i], ws[i]) for i in range(n_constraints)]
-    all_variables = variables + lambdas + vs + ws
+class SimplexMethod(QObject):
+    finished_signal = pyqtSignal()
+    update_signal = pyqtSignal(dict)  # Будем передавать словарь с данными итерации
 
-    return {
-        'lagrangian': L,
-        'kkt_conditions': kkt_conditions,
-        'primal_feasibility': primal_feasibility,
-        'dual_feasibility': dual_feasibility,
-        'complementary_slackness': complementary_slackness,
-        'all_variables': all_variables,
-        'lambdas': lambdas,
-        'vs': vs,
-        'ws': ws,
-        'variables': variables,
-        'dL_dx': dL_dx,
-        'dL_dlambda': dL_dlambda,
-        'obj_func': obj_func,
-        'constraints': constraints
-    }
+    def __init__(self, params_dict, log_emitter):
+        super().__init__()
+        self.function = params_dict['function']
+        self.constraints = params_dict['constraints']
+        self.variables = params_dict['variables']
+        self.max_iterations = params_dict.get('max_iterations', 100)
 
+        self.log_emitter = log_emitter
+        self._is_running = False
+        self.initial_delay = 0.05
+        self.min_delay = 0.001
 
-def add_artificial_variables(kkt_system, kkt_conditions):
-    variables = kkt_system['all_variables']
-    vs = kkt_system['vs']
-    ws = kkt_system['ws']
+        # Результаты оптимизации
+        self.kkt_system = None
+        self.artificial_system = None
+        self.simplex_data = None
+        self.solution_results = None
+        self.scipy_result = None
+
+        # Текущее состояние
+        self.current_iteration = 0
+        self.current_solution = None
+
+    def run(self):
+        self._is_running = True
+        self.log_emitter.log_signal.emit("🔹 KKT optimization started...")
+
+        try:
+            # Шаг 1: Построение системы KKT
+            self._build_kkt_system()
+
+            # Шаг 2: Добавление искусственных переменных
+            self._add_artificial_variables()
+
+            # Шаг 3: Построение симплекс-таблицы
+            self._build_simplex_table()
+
+            # Шаг 4: Решение симплекс-методом
+            self._solve_simplex()
+
+            # Шаг 5: Проверка решения через scipy
+            self._verify_with_scipy()
+
+            # Завершение
+            self.log_emitter.log_signal.emit("🎉 KKT optimization finished successfully!")
+
+        except Exception as e:
+            self.log_emitter.log_signal.emit(f"❌ Error in KKT optimization: {str(e)}")
+        finally:
+            self._is_running = False
+            self.finished_signal.emit()
+
+    def stop(self):
+        self._is_running = False
+        self.log_emitter.log_signal.emit("⏹ KKT optimization stopped by user")
+
+    def _build_kkt_system(self):
+        self.log_emitter.log_signal.emit("🔧 Building KKT system...")
+
+        n_constraints = len(self.constraints)
+        lambdas = [sp.symbols(f'lambda{i + 1}', real=True) for i in range(n_constraints)]
+        vs = [sp.symbols(f'v{i + 1}', real=True) for i in range(len(self.variables))]
+        ws = [sp.symbols(f'w{i + 1}', real=True) for i in range(n_constraints)]
+
+        L = self.function + sum(lambdas[i] * self.constraints[i] for i in range(n_constraints))
+        dL_dx = [sp.diff(L, var) for var in self.variables]
+        dL_dlambda = self.constraints
+
+        kkt_conditions = []
+        for i in range(len(self.variables)):
+            kkt_conditions.append(dL_dx[i] - vs[i])
+        for i in range(n_constraints):
+            kkt_conditions.append(dL_dlambda[i] + ws[i])
+
+        primal_feasibility = [constr <= 0 for constr in self.constraints] + [var >= 0 for var in self.variables]
+        dual_feasibility = [lam >= 0 for lam in lambdas] + [v >= 0 for v in vs] + [w >= 0 for w in ws]
+
+        complementary_slackness = [(self.variables[i], vs[i]) for i in range(len(self.variables))]
+        complementary_slackness += [(lambdas[i], ws[i]) for i in range(n_constraints)]
+
+        all_variables = self.variables + lambdas + vs + ws
+
+        self.kkt_system = {
+            'lagrangian': L,
+            'kkt_conditions': kkt_conditions,
+            'primal_feasibility': primal_feasibility,
+            'dual_feasibility': dual_feasibility,
+            'complementary_slackness': complementary_slackness,
+            'all_variables': all_variables,
+            'lambdas': lambdas,
+            'vs': vs,
+            'ws': ws,
+            'variables': self.variables,
+            'dL_dx': dL_dx,
+            'dL_dlambda': dL_dlambda,
+            'obj_func': self.function,
+            'constraints': self.constraints
+        }
+
+        self._log_kkt_system()
+
+    def _log_kkt_system(self):
+        """Log the KKT system information in a clean, structured format."""
+        sections = [
+            ("KKT SYSTEM", ""),
+            ("Objective function:", str(sp.pretty(self.function))),
+            ("Constraints:", *[f"  g{i + 1}: {sp.pretty(c)} <= 0" for i, c in enumerate(self.constraints)]),
+            ("", ""),
+            ("Variables:", ""),
+            (f"  Optimization: {', '.join(map(str, self.variables))}", ""),
+            (f"  Lagrange multipliers (λ): {', '.join(map(str, self.kkt_system['lambdas']))}", ""),
+            (f"  Non-negativity (v): {', '.join(map(str, self.kkt_system['vs']))}", ""),
+            (f"  Slackness (w): {', '.join(map(str, self.kkt_system['ws']))}", ""),
+            ("", ""),
+            ("Lagrangian:", str(sp.pretty(self.kkt_system['lagrangian']))),
+            ("", ""),
+            ("KKT Conditions:",
+             *[f"  {i + 1}. {sp.pretty(eq)} = 0" for i, eq in enumerate(self.kkt_system['kkt_conditions'])]),
+            ("", ""),
+            ("Feasibility:", ""),
+            ("  Primal:", *[f"    {sp.pretty(c)}" for c in self.kkt_system['primal_feasibility']]),
+            ("  Dual:", *[f"    {sp.pretty(c)}" for c in self.kkt_system['dual_feasibility']]),
+            ("", ""),
+            ("Complementary Slackness:",
+             *[f"  {sp.pretty(var)} * {sp.pretty(v)} = 0" for var, v in self.kkt_system['complementary_slackness']])
+        ]
+
+        # Flatten the sections and filter out empty strings
+        message = []
+        for section in sections:
+            if isinstance(section, tuple):
+                message.extend(line for line in section if line)
+            elif section:
+                message.append(section)
+
+        self.log_emitter.log_signal.emit("\n".join(message))
+
+def _add_artificial_variables(self):
+    self.log_emitter.log_signal.emit("🔧 Adding artificial variables...")
+
+    variables = self.kkt_system['all_variables']
+    vs = self.kkt_system['vs']
+    ws = self.kkt_system['ws']
     z_vars = []
     modified_equations = []
     z_expressions = {}
     artificial_info = []
 
-    for i, eq in enumerate(kkt_conditions):
+    for i, eq in enumerate(self.kkt_system['kkt_conditions']):
         left_part = eq
         right_part = 0
         free_term = left_part.as_coeff_add(*variables)[0]
+
         if i < len(vs):
             dop_var = vs[i]
             dop_var_name = f'v{i + 1}'
@@ -64,6 +171,7 @@ def add_artificial_variables(kkt_system, kkt_conditions):
             dop_var = ws[i - len(vs)]
             dop_var_name = f'w{i - len(vs) + 1}'
             dop_var_sign = 1
+
         need_artificial = (dop_var_sign < 0 and free_term < 0) or (dop_var_sign > 0 and free_term > 0)
 
         eq_info = {
@@ -93,7 +201,7 @@ def add_artificial_variables(kkt_system, kkt_conditions):
         artificial_info.append(eq_info)
         modified_equations.append((modified_eq, right_part_final))
 
-    result = {
+    self.artificial_system = {
         'z_vars': z_vars,
         'z_expressions': z_expressions,
         'F_z': sum(z_vars) if z_vars else None,
@@ -102,34 +210,79 @@ def add_artificial_variables(kkt_system, kkt_conditions):
         'artificial_info': artificial_info
     }
 
-    return result
+    self._log_artificial_variables()
 
 
-def build_simplex_table(kkt_system, artificial_system):
+def _log_artificial_variables(self):
+    msg = ["### Artificial Variables ###"]
+
+    for eq_info in self.artificial_system['artificial_info']:
+        i = eq_info['equation_index']
+        info = [
+            f"Equation {i}: {eq_info['equation']} = 0",
+            f"  Free term: {eq_info['free_term']}",
+            f"  Aux variable: {eq_info['dop_var_name']} (sign: {'+' if eq_info['dop_var_sign'] > 0 else '-'})",
+            f"  Need artificial: {'Yes' if eq_info['need_artificial'] else 'No'}"
+        ]
+
+        if eq_info['need_artificial']:
+            info.append(f"  Added z{i}: {eq_info['modified_eq']} = {eq_info['right_part']}")
+        else:
+            info.append(f"  Modified equation: {eq_info['modified_eq']} = {eq_info['right_part']}")
+
+        msg.extend(info)
+
+    if self.artificial_system['z_vars']:
+        msg.extend([
+            "",
+            "### Auxiliary LP Function ###",
+            f"F(z) = {self.artificial_system['F_z']}",
+            f"F(z) expanded: {self.artificial_system['F_z_expanded']}",
+            "",
+            "### Final System ###",
+            *[f"Equation {i + 1}: {eq} = {rhs}" for i, (eq, rhs) in
+              enumerate(self.artificial_system['modified_equations'])],
+            "",
+            "### Non-negativity Conditions ###",
+            *[f"{z} >= 0" for z in self.artificial_system['z_vars']]
+        ])
+    else:
+        msg.append("\nNo artificial variables needed.")
+
+    self.log_emitter.log_signal.emit("\n".join(msg))
+
+
+def _build_simplex_table(self):
+    self.log_emitter.log_signal.emit("🔧 Building simplex table...")
+
     variables_order = (
-            kkt_system['variables'] +
-            kkt_system['lambdas'] +
-            kkt_system['vs'] +
-            kkt_system['ws'] +
-            artificial_system['z_vars']
+            self.kkt_system['variables'] +
+            self.kkt_system['lambdas'] +
+            self.kkt_system['vs'] +
+            self.kkt_system['ws'] +
+            self.artificial_system['z_vars']
     )
-    headers = ['Базис', 'Св.член'] + [str(var) for var in variables_order]
+
+    headers = ['Basis', 'RHS'] + [str(var) for var in variables_order]
     table = PrettyTable(headers)
     table.float_format = ".2f"
 
     rows_data = []
-    for eq, rhs in artificial_system['modified_equations']:
+    for eq, rhs in self.artificial_system['modified_equations']:
         coeffs = [eq.coeff(var) for var in variables_order]
         basis_var = None
-        for z_var in artificial_system['z_vars']:
+
+        for z_var in self.artificial_system['z_vars']:
             if eq.coeff(z_var) == 1:
                 basis_var = z_var
                 break
+
         if not basis_var:
-            for w_var in kkt_system['ws']:
+            for w_var in self.kkt_system['ws']:
                 if eq.coeff(w_var) == 1:
                     basis_var = w_var
                     break
+
         row = [str(basis_var), float(rhs)] + [float(coef) for coef in coeffs]
         table.add_row(row)
         rows_data.append({
@@ -139,9 +292,9 @@ def build_simplex_table(kkt_system, artificial_system):
         })
 
     f_row_data = None
-    if artificial_system['F_z_expanded'] is not None:
-        f_coeffs = [-artificial_system['F_z_expanded'].coeff(var) for var in variables_order]
-        f_constant = artificial_system['F_z_expanded'].as_coeff_add(*variables_order)[0]
+    if self.artificial_system['F_z_expanded'] is not None:
+        f_coeffs = [-self.artificial_system['F_z_expanded'].coeff(var) for var in variables_order]
+        f_constant = self.artificial_system['F_z_expanded'].as_coeff_add(*variables_order)[0]
         row = ['F', float(f_constant)] + [float(coef) for coef in f_coeffs]
         table.add_row(row)
         f_row_data = {
@@ -149,7 +302,7 @@ def build_simplex_table(kkt_system, artificial_system):
             'coeffs': f_coeffs
         }
 
-    return {
+    self.simplex_data = {
         'table': table,
         'rows_data': rows_data,
         'f_row_data': f_row_data,
@@ -157,27 +310,30 @@ def build_simplex_table(kkt_system, artificial_system):
         'headers': headers
     }
 
+    self.log_emitter.log_signal.emit("### Initial Simplex Table ###\n" + str(table))
 
-def solve_simplex_table(kkt_system, artificial_system, simplex_data):
-    variables_order = simplex_data['variables_order']
-    z_vars = artificial_system['z_vars']
-    vs = kkt_system['vs']
-    ws = kkt_system['ws']
-    complementary_slackness = kkt_system['complementary_slackness']
 
-    simplex_table = simplex_data['table']
+def _solve_simplex(self):
+    self.log_emitter.log_signal.emit("🔧 Solving with simplex method...")
+
+    variables_order = self.simplex_data['variables_order']
+    z_vars = self.artificial_system['z_vars']
+    vs = self.kkt_system['vs']
+    ws = self.kkt_system['ws']
+    complementary_slackness = self.kkt_system['complementary_slackness']
+
+    simplex_table = self.simplex_data['table']
     table_rows = simplex_table._rows
-    headers = simplex_table.field_names
+    headers = self.simplex_data['headers']
 
-    iteration = 1
-    max_iterations = 100
+    self.current_iteration = 0
     basis_history = set()
+    self.solution_results = {'iterations': []}
 
-    iterations_data = []
-
-    while iteration <= max_iterations:
+    while self.current_iteration < self.max_iterations and self._is_running:
+        self.current_iteration += 1
         iteration_info = {
-            'iteration': iteration,
+            'iteration': self.current_iteration,
             'table': copy.deepcopy(simplex_table),
         }
 
@@ -194,11 +350,35 @@ def solve_simplex_table(kkt_system, artificial_system, simplex_data):
 
         if basis_str in basis_history:
             iteration_info['cycle_detected'] = True
-            iterations_data.append(iteration_info)
-            final_solution = handle_final_solution(frac_rows, variables_order, z_vars, vs, ws, complementary_slackness)
-            return {'iterations': iterations_data, 'solution': final_solution}
+            self.solution_results['iterations'].append(iteration_info)
+            final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
+                                                         complementary_slackness)
+            self.solution_results['solution'] = final_solution
+            self.log_emitter.log_signal.emit("🔄 Cycle detected in simplex method!")
+            break
 
         basis_history.add(basis_str)
+
+        # Вычисляем текущее значение целевой функции
+        solution = {}
+        for row in frac_rows:
+            if row[0] != 'F':
+                basis_var = row[0]
+                free_term = float(row[1])
+                solution[basis_var] = free_term
+
+        for var in variables_order:
+            if str(var) not in solution:
+                solution[str(var)] = 0.0
+
+        # Сохраняем текущее решение
+        self.current_solution = solution
+        iteration_info['current_solution'] = solution
+
+        # Вычисляем значение целевой функции
+        if 'x' in solution and 'y' in solution:
+            obj_value = float(sp.lambdify(self.variables, self.function)(solution['x'], solution['y']))
+            iteration_info['objective_value'] = obj_value
 
         # Извлекаем строку целевой функции
         f_row = [row for row in frac_rows if row[0] == 'F'][0]
@@ -210,9 +390,12 @@ def solve_simplex_table(kkt_system, artificial_system, simplex_data):
         iteration_info['is_optimal'] = is_optimal
 
         if is_optimal:
-            iterations_data.append(iteration_info)
-            final_solution = handle_final_solution(frac_rows, variables_order, z_vars, vs, ws, complementary_slackness)
-            return {'iterations': iterations_data, 'solution': final_solution}
+            self.solution_results['iterations'].append(iteration_info)
+            final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
+                                                         complementary_slackness)
+            self.solution_results['solution'] = final_solution
+            self.log_emitter.log_signal.emit("✅ Optimal solution found!")
+            break
 
         # Выбираем ведущий столбец
         max_coeff = float('-inf')
@@ -259,8 +442,9 @@ def solve_simplex_table(kkt_system, artificial_system, simplex_data):
 
         if pivot_col_idx is None:
             iteration_info['no_pivot_col'] = True
-            iterations_data.append(iteration_info)
-            return {'iterations': iterations_data, 'solution': None}
+            self.solution_results['iterations'].append(iteration_info)
+            self.log_emitter.log_signal.emit("❌ No suitable pivot column found!")
+            break
 
         # Выбираем ведущую строку
         min_ratio = float('inf')
@@ -307,8 +491,9 @@ def solve_simplex_table(kkt_system, artificial_system, simplex_data):
 
         if pivot_row_idx is None:
             iteration_info['unbounded'] = True
-            iterations_data.append(iteration_info)
-            return {'iterations': iterations_data, 'solution': None}
+            self.solution_results['iterations'].append(iteration_info)
+            self.log_emitter.log_signal.emit("❌ Problem is unbounded!")
+            break
 
         # Опорный элемент
         pivot_element = frac_rows[pivot_row_idx][pivot_col_idx]
@@ -344,15 +529,61 @@ def solve_simplex_table(kkt_system, artificial_system, simplex_data):
         frac_rows = new_rows
         simplex_table = new_table
 
-        iterations_data.append(iteration_info)
-        iteration += 1
+        self.solution_results['iterations'].append(iteration_info)
 
-    # Достигнуто максимальное количество итераций
-    final_solution = handle_final_solution(frac_rows, variables_order, z_vars, vs, ws, complementary_slackness)
-    return {'iterations': iterations_data, 'solution': final_solution, 'max_iterations_reached': True}
+        # Логирование итерации
+        self._log_simplex_iteration(iteration_info)
+
+        # Эмитируем сигнал обновления
+        self.update_signal.emit({
+            'iteration': self.current_iteration,
+            'table': str(simplex_table),
+            'solution': solution,
+            'objective_value': iteration_info.get('objective_value', None),
+            'is_optimal': is_optimal
+        })
+
+    if self.current_iteration >= self.max_iterations:
+        final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
+                                                     complementary_slackness)
+        self.solution_results['solution'] = final_solution
+        self.log_emitter.log_signal.emit(f"⚠ Reached maximum iterations ({self.max_iterations})")
 
 
-def handle_final_solution(frac_rows, variables_order, z_vars, vs, ws, complementary_slackness):
+def _log_simplex_iteration(self, iteration_info):
+    msg = [
+        f"\n### Iteration {iteration_info['iteration']} ###",
+        str(iteration_info['table']),
+        "",
+        "### F-row coefficients ###"
+    ]
+
+    for var, coef in iteration_info['f_coeffs'].items():
+        msg.append(f"{var}: {coef:.6f}")
+
+    msg.append("\n### Pivot Selection ###")
+    msg.append(
+        f"Leading column: {iteration_info['pivot_col']['var']} (coef: {iteration_info['pivot_col']['coef']:.6f})")
+
+    msg.append("\n### Ratios ###")
+    for ratio in iteration_info['ratio_data']:
+        if 'skipped' in ratio:
+            msg.append(f"Row {ratio['row_var']}: skipped ({ratio['reason']})")
+        else:
+            msg.append(
+                f"Row {ratio['row_var']}: {ratio['free_term']:.6f} / {ratio['pivot_col_val']:.6f} = {ratio['ratio']:.6f}")
+
+    msg.append(
+        f"\nLeading row: {iteration_info['pivot_row']['var']} (ratio: {iteration_info['pivot_row']['ratio']:.6f})")
+    msg.append(f"Pivot element: {iteration_info['pivot_element']:.6f}")
+
+    if 'objective_value' in iteration_info:
+        msg.append(f"\nCurrent objective value: {iteration_info['objective_value']:.6f}")
+
+    self.log_emitter.log_signal.emit("\n".join(msg))
+
+
+def _handle_final_solution(self, frac_rows, variables_order, z_vars, vs, ws, complementary_slackness):
     f_row = [row for row in frac_rows if row[0] == 'F'][0]
     f_value = float(f_row[1])
 
@@ -430,39 +661,50 @@ def handle_final_solution(frac_rows, variables_order, z_vars, vs, ws, complement
                 })
         result['active_constraints'] = active_constraints
 
+    self._log_final_solution(result)
     return result
 
 
-def solve_kkt_example():
-    x, y = sp.symbols('x y', real=True)
-    variables = [x, y]
+def _log_final_solution(self, final_solution):
+    msg = ["\n### Final Solution ###"]
 
-    # Целевая функция
-    # obj_func = 2 * x ** 2 + 3 * y ** 2 + 4 * x * y - 6 * x - 3 * y
-    obj_func = 2 * x**2 + 2 * x * y + 2 * y**2 - 4 * x - 6 * y
+    if final_solution['is_feasible']:
+        msg.append("✅ Found feasible optimal solution")
+        msg.append("Solution:")
 
-    # Ограничения в форме g(x) <= 0
-    constraints = [
-        # x + y - 1,
-        # 2 * x + 3 * y - 4
-        x + 2*y - 2
-    ]
+        for var, value in final_solution['solution'].items():
+            msg.append(f"{var} = {value:.6f}")
 
-    kkt_system = dynamic_kkt_system(obj_func, constraints, variables)
-    artificial_system = add_artificial_variables(kkt_system, kkt_system['kkt_conditions'])
-    simplex_data = build_simplex_table(kkt_system, artificial_system)
-    solution_results = solve_simplex_table(kkt_system, artificial_system, simplex_data)
+        msg.append(f"Objective value: {final_solution['f_value']:.6f}")
 
-    # Проверка с использованием scipy.optimize.minimize
+        if final_solution['additional_in_basis']:
+            msg.append("\nActive constraints:")
+            for constraint in final_solution['active_constraints']:
+                if constraint['type'] == 'non_negativity':
+                    msg.append(
+                        f"  {constraint['var']} > 0 => {constraint['original_var']} = 0 (non-negativity constraint active)")
+                else:
+                    msg.append(f"  {constraint['var']} > 0 => {constraint['original_var']} = 0 (constraint inactive)")
+    else:
+        msg.append("❌ No feasible solution found")
+        msg.append(f"F value: {final_solution['f_value']:.6f}")
+        msg.append(f"Artificial variables in basis: {final_solution['artificial_in_basis']}")
+
+    self.log_emitter.log_signal.emit("\n".join(msg))
+
+
+def _verify_with_scipy(self):
+    self.log_emitter.log_signal.emit("\n🔍 Verifying solution with scipy.optimize.minimize...")
+
+    # Преобразование целевой функции
     def objective(vars):
-        return sp.lambdify((x, y), obj_func, 'numpy')(vars[0], vars[1])
+        return sp.lambdify(self.variables, self.function, 'numpy')(vars[0], vars[1])
 
-    # Преобразование ограничений в формат scipy
+    # Преобразование ограничений
     scipy_constraints = []
-    for i, constr in enumerate(constraints):
-        # Ограничение g_i(x, y) <= 0
-        def constraint_func(vars, constr=constr):
-            return -sp.lambdify((x, y), constr, 'numpy')(vars[0], vars[1])  # -g_i(x, y) >= 0
+    for constr in self.constraints:
+        def constraint_func(vars, c=constr):
+            return -sp.lambdify(self.variables, c, 'numpy')(vars[0], vars[1])  # -g_i(x, y) >= 0
 
         scipy_constraints.append({
             'type': 'ineq',
@@ -475,8 +717,8 @@ def solve_kkt_example():
     # Начальное приближение
     initial_guess = [0, 0]
 
-    # Решение задачи оптимизации
-    scipy_result = minimize(
+    # Решение задачи
+    self.scipy_result = minimize(
         objective,
         initial_guess,
         method='SLSQP',
@@ -484,228 +726,94 @@ def solve_kkt_example():
         constraints=scipy_constraints
     )
 
-    return {
-        'kkt_system': kkt_system,
-        'artificial_system': artificial_system,
-        'simplex_data': simplex_data,
-        'solution_results': solution_results,
-        'scipy_result': scipy_result,
-        'variables': variables,
-        'obj_func': obj_func,
-        'constraints': constraints
-    }
+    # Логирование результатов
+    msg = [
+        "### Scipy Optimization Results ###",
+        f"Solution: x = {self.scipy_result.x[0]:.6f}, y = {self.scipy_result.x[1]:.6f}",
+        f"Objective value: {self.scipy_result.fun:.6f}",
+        "Constraint values:",
+        *[
+            f"g{i + 1}(x,y) = {sp.lambdify(self.variables, c, 'numpy')(self.scipy_result.x[0], self.scipy_result.x[1]):.6f}"
+            for i, c in enumerate(self.constraints)],
+        f"Success: {self.scipy_result.success}",
+        f"Message: {self.scipy_result.message}"
+    ]
+
+    # Сравнение с симплекс-методом
+    if self.solution_results.get('solution', {}).get('is_feasible', False):
+        simplex_sol = self.solution_results['solution']['solution']
+        x_simplex = simplex_sol.get('x', 0)
+        y_simplex = simplex_sol.get('y', 0)
+
+        msg.extend([
+            "\n### Comparison ###",
+            f"Simplex solution: x = {x_simplex:.6f}, y = {y_simplex:.6f}",
+            f"Scipy solution: x = {self.scipy_result.x[0]:.6f}, y = {self.scipy_result.x[1]:.6f}",
+            f"Difference: Δx = {abs(x_simplex - self.scipy_result.x[0]):.6f}, Δy = {abs(y_simplex - self.scipy_result.x[1]):.6f}",
+            f"Objective difference: {abs(sp.lambdify(self.variables, self.function)(x_simplex, y_simplex) - self.scipy_result.fun):.6f}"
+        ])
+
+    self.log_emitter.log_signal.emit("\n".join(msg))
 
 
-def main():
-    results = solve_kkt_example()
-
-    kkt_system = results['kkt_system']
-    artificial_system = results['artificial_system']
-    simplex_data = results['simplex_data']
-    solution_results = results['solution_results']
-    scipy_result = results['scipy_result']
-    variables = results['variables']
-    obj_func = results['obj_func']
-    constraints = results['constraints']
-
-    x, y = variables
-
-    # === Вывод результатов KKT системы ===
-    print("### Задача оптимизации ###")
-    print(f"Целевая функция: {obj_func}")
-    print("Ограничения:")
-    for i, g in enumerate(constraints):
-        print(f"g{i + 1}(x) = {g} <= 0")
-
-    print("\n### Переменные системы ###")
-    print(f"Переменные оптимизации: {kkt_system['variables']}")
-    print(f"Множители Лагранжа: {kkt_system['lambdas']}")
-    print(f"Переменные неотрицательности v: {kkt_system['vs']}")
-    print(f"Переменные нежесткости w: {kkt_system['ws']}")
-
-    print("\n### Функция Лагранжа ###")
-    print(sp.pretty(kkt_system['lagrangian']))
-
-    print("\n### Частные производные ###")
-    for i, var in enumerate(kkt_system['variables']):
-        print(f"dL/d{var} = {kkt_system['dL_dx'][i]}")
-
-    print("\nКоэффициенты в условиях KKT (для анализа знаков):")
-    for i, eq in enumerate(kkt_system['kkt_conditions']):
-        print(f"Уравнение {i + 1}: {eq} = 0")
-        if i < len(kkt_system['variables']):
-            print(f"  Уравнение для переменной {kkt_system['variables'][i]}")
-        else:
-            print(f"  Уравнение для ограничения {i - len(kkt_system['variables']) + 1}")
-
-    for i, lam in enumerate(kkt_system['lambdas']):
-        print(f"dL/d{lam} = {kkt_system['dL_dlambda'][i]}")
-
-    print("\n### Условия KKT ###")
-    for i, eq in enumerate(kkt_system['kkt_conditions']):
-        print(f"Уравнение {i + 1}: {eq} = 0")
-
-    print("\n### Условия допустимости ###")
-    print("Примарные условия:")
-    for cond in kkt_system['primal_feasibility']:
-        print(sp.pretty(cond))
-
-    print("\nДвойственные условия:")
-    for cond in kkt_system['dual_feasibility']:
-        print(sp.pretty(cond))
-
-    print("\n### Условия дополняющей нежесткости ###")
-    for var, v in kkt_system['complementary_slackness']:
-        if var in kkt_system['variables']:
-            i = kkt_system['variables'].index(var)
-            print(f"{var} * v{i + 1} = 0, {var} >= 0, v{i + 1} >= 0")
-        else:
-            i = kkt_system['lambdas'].index(var)
-            print(f"{var} * w{i + 1} = 0, {var} >= 0, w{i + 1} >= 0")
-
-    # === Вывод результатов добавления искусственных переменных ===
-    print("\n### Ввод искусственных переменных ###")
-    for eq_info in artificial_system['artificial_info']:
-        i = eq_info['equation_index']
-        eq = eq_info['equation']
-        free_term = eq_info['free_term']
-        dop_var_name = eq_info['dop_var_name']
-        dop_var_sign = eq_info['dop_var_sign']
-        need_artificial = eq_info['need_artificial']
-
-        print(f"Анализ уравнения {i}: {eq} = 0")
-        print(f"  Свободный член: {free_term}")
-        print(f"  Доп. переменная: {dop_var_name} входит со знаком {'+' if dop_var_sign > 0 else '-'}")
-        print(f"  Совпадение знаков: {'Да' if need_artificial else 'Нет'}")
-
-        if need_artificial:
-            z_var = eq_info['z_var']
-            modified_eq = eq_info['modified_eq']
-            right_part = eq_info['right_part']
-            print(f"В уравнение {i} введена искусственная переменная {z_var}")
-            print(f"Уравнение с {z_var}: {modified_eq} = {right_part}")
-        else:
-            modified_eq = eq_info['modified_eq']
-            right_part = eq_info['right_part']
-            print(f"В уравнение {i} не требуется вводить искусственную переменную")
-            print(f"Уравнение остается: {modified_eq} = {right_part}")
-
-    if artificial_system['z_vars']:
-        F_z = artificial_system['F_z']
-        F_z_expanded = artificial_system['F_z_expanded']
-
-        print("\n### Вспомогательная функция ЛП ###")
-        print(f"F(z) = {F_z}")
-        print(f"F(z) = {F_z_expanded}")
-
-        print("\n### Окончательная система уравнений ###")
-        for i, (eq, right) in enumerate(artificial_system['modified_equations']):
-            print(f"Уравнение {i + 1}: {eq} = {right}")
-
-        print("\n### Условия неотрицательности для искусственных переменных ###")
-        for z in artificial_system['z_vars']:
-            print(f"{z} >= 0")
-    else:
-        print("\nИскусственных переменных не требуется вводить в данной задаче.")
-
-    # === Вывод результатов построения симплекс-таблицы ===
-    print("\n### Первая симплекс-таблица ###")
-    print(simplex_data['table'])
-
-    # === Вывод результатов симплекс-метода ===
-    for idx, iter_data in enumerate(solution_results['iterations']):
-        iteration = iter_data['iteration']
-        print(f"\n### Итерация {iteration} ###")
-        print(iter_data['table'])
-
-        # Если обнаружено зацикливание
-        if 'cycle_detected' in iter_data and iter_data['cycle_detected']:
-            print("Обнаружено зацикливание: текущий базис уже встречался.")
-            print(f"Базис: {iter_data['current_basis']}")
-            break
-
-        # Если решение оптимально
-        if iter_data['is_optimal']:
-            print("Найдено оптимальное решение (все коэффициенты в строке F <= 0).")
-            break
-
-        # Коэффициенты в строке F
-        print("Коэффициенты в строке F:")
-        for var, coef in iter_data['f_coeffs'].items():
-            print(f"{var}: {coef:.2f}")
-
-        # Информация о выборе ведущего столбца
-        if 'no_pivot_col' in iter_data and iter_data['no_pivot_col']:
-            print("Нет подходящего ведущего столбца с учетом условий дополняющей нежесткости и базисных переменных.")
-            break
-
-        pivot_col = iter_data['pivot_col']
-        print(f"Ведущий столбец: {pivot_col['var']} (коэффициент = {pivot_col['coef']:.2f})")
-
-        # Информация о выборе ведущей строки
-        print("Отношения для выбора ведущей строки:")
-        for ratio_info in iter_data['ratio_data']:
-            if 'skipped' in ratio_info:
-                print(f"Строка {ratio_info['row_var']} пропущена ({ratio_info['reason']})")
-            else:
-                print(
-                    f"Строка {ratio_info['row_var']}: {ratio_info['free_term']:.6f} / {ratio_info['pivot_col_val']:.6f} = {ratio_info['ratio']:.6f}")
-
-        pivot_row = iter_data['pivot_row']
-        print(f"Ведущая строка: {pivot_row['var']} (отношение = {pivot_row['ratio']:.6f})")
-        print(f"Опорный элемент: {iter_data['pivot_element']:.6f}")
-
-    # === Вывод финального решения ===
-    final_solution = solution_results['solution']
-    print("\n### Финальное решение ###")
-    if final_solution and final_solution['is_feasible']:
-        print("Найдено допустимое оптимальное базисное решение (F = 0, искусственные переменные выведены).")
-        print("Решение:")
-        for var, value in final_solution['solution'].items():
-            print(f"{var} = {value:.6f}")
-        print(f"Значение целевой функции: {final_solution['f_value']:.6f}")
-
-        if final_solution['additional_in_basis']:
-            print("\n### Активные ограничения ###")
-            for constraint in final_solution['active_constraints']:
-                if constraint['type'] == 'non_negativity':
-                    print(
-                        f"{constraint['var']} > 0 => {constraint['original_var']} = 0 (ограничение неотрицательности активно)")
-                else:
-                    print(f"{constraint['var']} > 0 => {constraint['original_var']} = 0 (ограничение не активно)")
-    else:
-        print(
-            f"Система не имеет допустимого базисного решения (F = {final_solution['f_value']:.6f}, искусственные переменные в базисе: {final_solution['artificial_in_basis']}).")
-
-    # === Проверка решения через scipy ===
-    print("\n### Проверка решения с использованием scipy.optimize.minimize ###")
-    print("Результаты от scipy.optimize.minimize:")
-    print(f"x = {scipy_result.x[0]:.6f}, y = {scipy_result.x[1]:.6f}")
-    print(f"Значение целевой функции: {scipy_result.fun:.6f}")
-    print("Проверка ограничений:")
-    for i, constr in enumerate(constraints):
-        value = sp.lambdify((x, y), constr, 'numpy')(scipy_result.x[0], scipy_result.x[1])
-        print(f"g{i + 1}(x, y) = {value:.6f} (должно быть <= 0)")
-    print(f"Успех оптимизации: {scipy_result.success}")
-    print(f"Сообщение: {scipy_result.message}")
-
-    # === Сравнение решений ===
-    if final_solution and final_solution['is_feasible']:
-        x_simplex = final_solution['solution'].get('x', 0.0)
-        y_simplex = final_solution['solution'].get('y', 0.0)
-        print("\n### Сравнение решений ###")
-        print(f"Симплекс-метод: x = {x_simplex:.6f}, y = {y_simplex:.6f}")
-        print(f"Scipy minimize: x = {scipy_result.x[0]:.6f}, y = {scipy_result.x[1]:.6f}")
-        print(
-            f"Абсолютная разница: |x_simplex - x_scipy| = {abs(x_simplex - scipy_result.x[0]):.6f}, |y_simplex - y_scipy| = {abs(y_simplex - scipy_result.x[1]):.6f}")
-
-        # Вычисление значения целевой функции для симплекс-метода
-        f_simplex = sp.lambdify((x, y), obj_func, 'numpy')(x_simplex, y_simplex)
-        print(f"Значение целевой функции (симплекс): {f_simplex:.6f}")
-        print(f"Разница в значении целевой функции: {abs(f_simplex - scipy_result.fun):.6f}")
-    else:
-        print("\nСравнение невозможно: симплекс-метод не нашёл допустимого решения.")
+@property
+def function(self):
+    return self._function
 
 
-if __name__ == "__main__":
-    main()
+@function.setter
+def function(self, value):
+    if not isinstance(value, sp.Expr):
+        raise ValueError("Function must be a sympy expression")
+    self._function = value
+
+
+@property
+def constraints(self):
+    return self._constraints
+
+
+@constraints.setter
+def constraints(self, value):
+    if not isinstance(value, list) or not all(isinstance(c, sp.Expr) for c in value):
+        raise ValueError("Constraints must be a list of sympy expressions")
+    self._constraints = value
+
+
+@property
+def variables(self):
+    return self._variables
+
+
+@variables.setter
+def variables(self, value):
+    if not isinstance(value, list) or not all(isinstance(v, sp.Symbol) for v in value):
+        raise ValueError("Variables must be a list of sympy symbols")
+    self._variables = value
+
+
+@property
+def max_iterations(self):
+    return self._max_iterations
+
+
+@max_iterations.setter
+def max_iterations(self, value):
+    if not isinstance(value, int) or value <= 0:
+        raise ValueError("Max iterations must be a positive integer")
+    self._max_iterations = value
+
+
+@property
+def is_running(self):
+    return self._is_running
+
+
+@property
+def current_solution(self):
+    return self._current_solution
+
+
+@current_solution.setter
+def current_solution(self, value):
+    self._current_solution = value
