@@ -2,6 +2,10 @@ import sympy as sp
 import json
 from itertools import product
 
+import sympy as sp
+import json
+from itertools import product
+
 
 def dynamic_kkt_system(obj_func, constraints, variables):
     """
@@ -44,8 +48,8 @@ def dynamic_kkt_system(obj_func, constraints, variables):
     dual_feasibility = [lam >= 0 for lam in lambdas] + [v >= 0 for v in vs] + [w >= 0 for w in ws]
 
     # Условия дополняющей нежесткости
-    complementary_slackness = [variables[i] * vs[i] == 0 for i in range(len(variables))]
-    complementary_slackness += [lambdas[i] * ws[i] == 0 for i in range(n_constraints)]
+    complementary_slackness = [(variables[i], vs[i]) for i in range(len(variables))]
+    complementary_slackness += [(lambdas[i], ws[i]) for i in range(n_constraints)]
 
     # Все переменные для решения системы
     all_variables = variables + lambdas + vs + ws
@@ -87,8 +91,13 @@ def dynamic_kkt_system(obj_func, constraints, variables):
         print(sp.pretty(cond))
 
     print("\n### Условия дополняющей нежесткости ###")
-    for cond in complementary_slackness:
-        print(sp.pretty(cond))
+    for var, v in complementary_slackness:
+        if var in variables:
+            i = variables.index(var)
+            print(f"{var} * v{i + 1} = 0, {var} >= 0, v{i + 1} >= 0")
+        else:
+            i = lambdas.index(var)
+            print(f"{var} * w{i + 1} = 0, {var} >= 0, w{i + 1} >= 0")
 
     return {
         'lagrangian': L,
@@ -102,7 +111,6 @@ def dynamic_kkt_system(obj_func, constraints, variables):
         'ws': ws
     }
 
-
 # Пример использования с захардкоженной функцией и ограничениями
 def example_usage():
     # Определение переменных
@@ -110,14 +118,14 @@ def example_usage():
     variables = [x, y]
 
     # Целевая функция
-    obj_func = 2 * x ** 2 + 2 * x * y + 2 * y ** 2 - 4 * x - 6 * y
-    # obj_func = 2 * x**2 + 3 * y**2 + 4*x*y - 6*x - 3*y
+    # obj_func = 2 * x ** 2 + 2 * x * y + 2 * y ** 2 - 4 * x - 6 * y
+    obj_func = 2 * x**2 + 3 * y**2 + 4*x*y - 6*x - 3*y
 
     # Ограничения в форме g(x) <= 0
     constraints = [
-        x + 2 * y - 2,  # x + 2y - 2 <= 0
-        # x + y - 1,
-        # 2 * x + 3 * y - 4
+        # x + 2 * y - 2,  # x + 2y - 2 <= 0
+        x + y - 1,
+        2 * x + 3 * y - 4
         # Здесь можно добавить дополнительные ограничения
     ]
 
