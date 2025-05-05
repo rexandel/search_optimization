@@ -1,182 +1,133 @@
-import numpy as np
-from scipy.optimize import linprog
-from PyQt5.QtCore import QObject, pyqtSignal
-import time
+import sympy as sp
+import json
+from itertools import product
 
 
-class SimplexMethod(QObject):
-    finished_signal = pyqtSignal()
-    update_signal = pyqtSignal(np.ndarray, bool)
+def dynamic_kkt_system(obj_func, constraints, variables):
+    """
+    Формирует систему KKT для заданной целевой функции и ограничений.
 
-    def __init__(self, params_dict, log_emitter):
-        super().__init__()
-        self.function = params_dict['function']
-        self.x_range = params_dict['x_range']
-        self.y_range = params_dict['y_range']
-        self.num_segments_x = params_dict['num_segments_x']
-        self.num_segments_y = params_dict['num_segments_y']
-        self.log_emitter = log_emitter
-        self._is_running = False
-        self.initial_delay = 0.1
-        self.min_delay = 0.01
-        self.all_points = []
+    Args:
+        obj_func (sympy expr): Целевая функция
+        constraints (list): Список ограничений вида g(x) <= 0
+        variables (list): Список переменных оптимизации
+    """
+    # Динамическое создание переменных
+    n_constraints = len(constraints)
+    lambdas = [sp.symbols(f'lambda{i + 1}', real=True) for i in range(n_constraints)]
 
-    @staticmethod
-    def piecewise_linear_approximation_2d(func, x_range, y_range, num_segments_x, num_segments_y):
-        x_min, x_max = x_range
-        y_min, y_max = y_range
+    # Переменные v для условий неотрицательности
+    vs = [sp.symbols(f'v{i + 1}', real=True) for i in range(len(variables))]
 
-        x_points = np.linspace(x_min, x_max, num_segments_x + 1)
-        y_points = np.linspace(y_min, y_max, num_segments_y + 1)
+    # Переменные w для ограничений
+    ws = [sp.symbols(f'w{i + 1}', real=True) for i in range(n_constraints)]
 
-        linear_approx = []
-        for i in range(num_segments_x):
-            for j in range(num_segments_y):
-                x1, x2 = x_points[i], x_points[i + 1]
-                y1, y2 = y_points[j], y_points[j + 1]
+    # Построение функции Лагранжа
+    L = obj_func + sum(lambdas[i] * constraints[i] for i in range(n_constraints))
 
-                func_values = {
-                    'f(x1,y1)': func(x1, y1),
-                    'f(x1,y2)': func(x1, y2),
-                    'f(x2,y1)': func(x2, y1),
-                    'f(x2,y2)': func(x2, y2)
-                }
+    # Частные производные по переменным
+    dL_dx = [sp.diff(L, var) for var in variables]
 
-                X = np.array([[1, x1, y1],
-                              [1, x1, y2],
-                              [1, x2, y1],
-                              [1, x2, y2]])
-                Y = np.array([func_values['f(x1,y1)'],
-                              func_values['f(x1,y2)'],
-                              func_values['f(x2,y1)'],
-                              func_values['f(x2,y2)']])
+    # Частные производные по множителям Лагранжа (g_i(x) <= 0)
+    dL_dlambda = constraints
 
-                coef, residuals, _, _ = np.linalg.lstsq(X, Y, rcond=None)
-                linear_approx.append({
-                    'coefs': coef,
-                    'x_range': (float(x1), float(x2)),
-                    'y_range': (float(y1), float(y2)),
-                    'residual': float(residuals[0]) if len(residuals) > 0 else 0.0
-                })
+    # Формирование условий KKT с дополнительными переменными
+    kkt_conditions = []
+    for i in range(len(variables)):
+        kkt_conditions.append(dL_dx[i] - vs[i])  # dL/dx_i - v_i = 0 (v_i вводится с минусом)
 
-        return (x_points, y_points), linear_approx
+    for i in range(n_constraints):
+        kkt_conditions.append(dL_dlambda[i] + ws[i])  # g_i(x) + w_i = 0 (w_i вводится с плюсом)
 
-    def find_segment_minimum(self, segment):
-        a0, a1, a2 = segment['coefs']
-        x1, x2 = segment['x_range']
-        y1, y2 = segment['y_range']
+    # Условия допустимости
+    primal_feasibility = [constr <= 0 for constr in constraints] + [var >= 0 for var in variables]
+    dual_feasibility = [lam >= 0 for lam in lambdas] + [v >= 0 for v in vs] + [w >= 0 for w in ws]
 
-        c = [a1, a2]
-        bounds = [(x1, x2), (y1, y2)]
-        res = linprog(c, bounds=bounds, method='highs')
+    # Условия дополняющей нежесткости
+    complementary_slackness = [variables[i] * vs[i] == 0 for i in range(len(variables))]
+    complementary_slackness += [lambdas[i] * ws[i] == 0 for i in range(n_constraints)]
 
-        if res.success:
-            x_min, y_min = res.x
-            min_value = a0 + a1 * x_min + a2 * y_min
+    # Все переменные для решения системы
+    all_variables = variables + lambdas + vs + ws
 
-            self.log_emitter.log_signal.emit(
-                f"Found minimum in segment x=[{x1:.2f}, {x2:.2f}], y=[{y1:.2f}, {y2:.2f}]\n"
-                f"• Coordinates: ({x_min:.4f}, {y_min:.4f})\n"
-                f"• Function value: {min_value:.6f}\n"
-                f"• Linear approx: {a0:.2f} + {a1:.2f}x + {a2:.2f}y\n"
-                f"• Approximation residual: {segment['residual']:.4e}"
-            )
+    # Вывод системы
+    print("### Задача оптимизации ###")
+    print(f"Целевая функция: {obj_func}")
+    print("Ограничения:")
+    for i, g in enumerate(constraints):
+        print(f"g{i + 1}(x) = {g} <= 0")
 
-            return {
-                'x': float(x_min),
-                'y': float(y_min),
-                'value': float(min_value),
-                'segment_coefs': [float(a0), float(a1), float(a2)],
-                'segment_range': (float(x1), float(x2), float(y1), float(y2))
-            }
-        else:
-            self.log_emitter.log_signal.emit(
-                f"⚠️ No minimum found in segment x=[{x1:.2f}, {x2:.2f}], y=[{y1:.2f}, {y2:.2f}]"
-            )
-            return None
+    print("\n### Переменные системы ###")
+    print(f"Переменные оптимизации: {variables}")
+    print(f"Множители Лагранжа: {lambdas}")
+    print(f"Переменные неотрицательности v: {vs}")
+    print(f"Переменные нежесткости w: {ws}")
 
-    def run(self):
-        self._is_running = True
-        self.all_points = []
-        self.log_emitter.log_signal.emit(
-            "🔹 Starting simplex method optimization...\n"
-            f"• Search area: x ∈ [{self.x_range[0]}, {self.x_range[1]}], "
-            f"y ∈ [{self.y_range[0]}, {self.y_range[1]}]\n"
-            f"• Grid size: {self.num_segments_x}x{self.num_segments_y} segments"
-        )
+    print("\n### Функция Лагранжа ###")
+    print(sp.pretty(L))
 
-        self.update_signal.emit(np.empty((0, 2)), False)
+    print("\n### Частные производные ###")
+    for i, var in enumerate(variables):
+        print(f"dL/d{var} = {dL_dx[i]}")
 
-        try:
-            self.log_emitter.log_signal.emit("\n📊 Building piecewise linear approximation...")
-            start_time = time.time()
+    for i, lam in enumerate(lambdas):
+        print(f"dL/d{lam} = {dL_dlambda[i]}")
 
-            (x_points, y_points), segments = self.piecewise_linear_approximation_2d(
-                self.function, self.x_range, self.y_range,
-                self.num_segments_x, self.num_segments_y)
+    print("\n### Условия KKT ###")
+    for i, eq in enumerate(kkt_conditions):
+        print(f"Уравнение {i + 1}: {eq} = 0")
 
-            approx_time = time.time() - start_time
-            self.log_emitter.log_signal.emit(
-                f"✓ Approximation built in {approx_time:.2f} seconds\n"
-                f"• Total segments: {len(segments)}\n"
-                f"• X grid points: {len(x_points)}\n"
-                f"• Y grid points: {len(y_points)}"
-            )
+    print("\n### Условия допустимости ###")
+    print("Примарные условия:")
+    for cond in primal_feasibility:
+        print(sp.pretty(cond))
 
-            minima = []
-            self.log_emitter.log_signal.emit("\n🔍 Searching for local minima in segments...")
+    print("\nДвойственные условия:")
+    for cond in dual_feasibility:
+        print(sp.pretty(cond))
 
-            for i, segment in enumerate(segments):
-                if not self._is_running:
-                    break
+    print("\n### Условия дополняющей нежесткости ###")
+    for cond in complementary_slackness:
+        print(sp.pretty(cond))
 
-                segment_info = (
-                    f"\nSegment {i + 1}/{len(segments)}\n"
-                    f"• X range: [{segment['x_range'][0]:.2f}, {segment['x_range'][1]:.2f}]\n"
-                    f"• Y range: [{segment['y_range'][0]:.2f}, {segment['y_range'][1]:.2f}]"
-                )
-                self.log_emitter.log_signal.emit(segment_info)
+    return {
+        'lagrangian': L,
+        'kkt_conditions': kkt_conditions,
+        'primal_feasibility': primal_feasibility,
+        'dual_feasibility': dual_feasibility,
+        'complementary_slackness': complementary_slackness,
+        'all_variables': all_variables,
+        'lambdas': lambdas,
+        'vs': vs,
+        'ws': ws
+    }
 
-                segment_min = self.find_segment_minimum(segment)
-                if segment_min:
-                    minima.append(segment_min)
-                    new_point = np.array([[segment_min['x'], segment_min['y']]])
-                    self.all_points.append(new_point)
 
-                    self.update_signal.emit(np.concatenate(self.all_points), False)
+# Пример использования с захардкоженной функцией и ограничениями
+def example_usage():
+    # Определение переменных
+    x, y = sp.symbols('x y', real=True)
+    variables = [x, y]
 
-                    delay = max(self.min_delay, self.initial_delay * (0.9 ** i))
-                    time.sleep(delay)
+    # Целевая функция
+    obj_func = 2 * x ** 2 + 2 * x * y + 2 * y ** 2 - 4 * x - 6 * y
+    # obj_func = 2 * x**2 + 3 * y**2 + 4*x*y - 6*x - 3*y
 
-            if minima:
-                global_min = min(minima, key=lambda x: x['value'])
-                total_time = time.time() - start_time
+    # Ограничения в форме g(x) <= 0
+    constraints = [
+        x + 2 * y - 2,  # x + 2y - 2 <= 0
+        # x + y - 1,
+        # 2 * x + 3 * y - 4
+        # Здесь можно добавить дополнительные ограничения
+    ]
 
-                report = (
-                    "\n🎉 OPTIMIZATION RESULTS\n"
-                    "════════════════════════\n"
-                    f"• Global minimum at: ({global_min['x']:.6f}, {global_min['y']:.6f})\n"
-                    f"• Function value: {global_min['value']:.6f}\n"
-                    f"• Found {len(minima)} local minima from {len(segments)} segments\n"
-                    f"• Total computation time: {total_time:.2f} seconds\n"
-                    "════════════════════════\n"
-                    "Segment with global minimum:\n"
-                    f"• X range: [{global_min['segment_range'][0]:.2f}, {global_min['segment_range'][1]:.2f}]\n"
-                    f"• Y range: [{global_min['segment_range'][2]:.2f}, {global_min['segment_range'][3]:.2f}]\n"
-                    f"• Approximation: {global_min['segment_coefs'][0]:.2f} + "
-                    f"{global_min['segment_coefs'][1]:.2f}x + "
-                    f"{global_min['segment_coefs'][2]:.2f}y"
-                )
-                self.log_emitter.log_signal.emit(report)
-            else:
-                self.log_emitter.log_signal.emit("\n❌ No minima found in any segment!")
+    # Формирование системы KKT
+    kkt_system = dynamic_kkt_system(obj_func, constraints, variables)
 
-        except Exception as e:
-            self.log_emitter.log_signal.emit(f"\n❌ ERROR: {str(e)}")
-        finally:
-            self._is_running = False
-            self.finished_signal.emit()
+    print("\n### Система готова для решения ###")
+    print("Чтобы решить систему, нужно исследовать все возможные комбинации")
+    print("условий дополняющей нежесткости.")
 
-    def stop(self):
-        self._is_running = False
-        self.log_emitter.log_signal.emit("\n⏹ Optimization stopped by user")
+
+if __name__ == "__main__":
+    example_usage()

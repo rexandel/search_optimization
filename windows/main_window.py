@@ -3,7 +3,7 @@ from PyQt5 import uic, QtCore
 from PyQt5.QtCore import Qt
 
 from windows import FunctionManagerWindow
-from optimization_methods import GradientDescent, SimplexMethod
+from optimization_methods import GradientDescent, OldSimplexMethod
 from utils import LogEmitter, FunctionManagerHelper
 
 import numpy as np
@@ -221,7 +221,7 @@ class MainWindow(QMainWindow):
             }
 
             self.openGLWidget.set_connect_optimization_points(False)
-            self.simplex_method = SimplexMethod(params, self.log_emitter)
+            self.simplex_method = OldSimplexMethod(params, self.log_emitter)
             self.simplex_method.finished_signal.connect(self.on_optimization_finished)
             self.simplex_method.update_signal.connect(self.openGLWidget.update_optimization_path)
 
@@ -271,7 +271,7 @@ class MainWindow(QMainWindow):
                 'num_segments_y': segments_y
             }
 
-            grid_points, linear_approx = SimplexMethod.piecewise_linear_approximation_2d(
+            grid_points, linear_approx = OldSimplexMethod.piecewise_linear_approximation_2d(
                 params['function'],
                 params['x_range'],
                 params['y_range'],
