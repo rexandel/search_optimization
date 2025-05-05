@@ -320,6 +320,7 @@ class SimplexMethod(QObject):
 
         self.log_emitter.log_signal.emit("### Initial Simplex Table ###\n" + str(table))
 
+
     def _solve_simplex(self):
         self.log_emitter.log_signal.emit("🔧 Solving with simplex method...")
 
@@ -386,7 +387,8 @@ class SimplexMethod(QObject):
             self.current_solution = solution
             iteration_info['current_solution'] = solution
 
-            # Store [x, y] coordinates and compute objective value for logging
+            # Store [x, y] coordinates and compute objective value
+            obj_value = None
             if 'x' in solution and 'y' in solution:
                 try:
                     x, y = solution['x'], solution['y']
@@ -394,19 +396,29 @@ class SimplexMethod(QObject):
                     obj_value = float(sp.lambdify(self.variables, self.function)(x, y))
                     iteration_info['objective_value'] = obj_value
 
-                    # Emit points as a 2D numpy array
+                    # Emit points as a 2D numpy array for visualization
                     points_array = np.array(self.points, dtype=float)  # Shape: (n, 2)
                     self.update_signal.emit(points_array)
 
                 except Exception as e:
                     self.log_emitter.log_signal.emit(f"⚠ Error calculating objective: {str(e)}")
 
-            # Извлекаем строку целевой функции
+            # Log simplex table and objective value before pivot operations
+            table_msg = [
+                f"\n### Simplex Table at Iteration {self.current_iteration} ###",
+                str(simplex_table)
+            ]
+            if obj_value is not None:
+                table_msg.append(f"Objective Function Value: {obj_value:.6f}")
+            else:
+                table_msg.append("Objective Function Value: Not computed (x or y missing)")
+            self.log_emitter.log_signal.emit("\n".join(table_msg))
+
+            # Check optimality
             f_row = [row for row in frac_rows if row[0] == 'F'][0]
             f_coeffs = {headers[i]: coef for i, coef in enumerate(f_row[2:], 2)}
             iteration_info['f_coeffs'] = {str(var): float(f_coeffs[str(var)]) for var in variables_order}
 
-            # Проверяем оптимальность
             is_optimal = all(coef <= 0 for coef in f_row[2:])
             iteration_info['is_optimal'] = is_optimal
 
@@ -416,9 +428,11 @@ class SimplexMethod(QObject):
                                                              complementary_slackness)
                 self.solution_results['solution'] = final_solution
                 self.log_emitter.log_signal.emit("✅ Optimal solution found!")
+                # Emit final points
+                self.update_signal.emit(np.array(self.points, dtype=float))
                 break
 
-            # Выбираем ведущий столбец
+            # Select pivot column
             max_coeff = float('-inf')
             pivot_col_idx = None
             pivot_col_var = None
@@ -442,13 +456,13 @@ class SimplexMethod(QObject):
                             for row in frac_rows:
                                 if row[0] == str(var2) and row[1] > 0:
                                     can_use = False
-                                    candidate['disqualified_reason'] = f"{var2} базисная и положительная ({row[1]})"
+                                    candidate['disqualified_reason'] = f"{var2} basis and positive ({row[1]})"
                                     break
                         elif var == var2:
                             for row in frac_rows:
                                 if row[0] == str(var1) and row[1] > 0:
                                     can_use = False
-                                    candidate['disqualified_reason'] = f"{var1} базисная и положительная ({row[1]})"
+                                    candidate['disqualified_reason'] = f"{var1} basis and positive ({row[1]})"
                                     break
 
                     if can_use:
@@ -465,9 +479,11 @@ class SimplexMethod(QObject):
                 iteration_info['no_pivot_col'] = True
                 self.solution_results['iterations'].append(iteration_info)
                 self.log_emitter.log_signal.emit("❌ No suitable pivot column found!")
+                # Emit final points
+                self.update_signal.emit(np.array(self.points, dtype=float))
                 break
 
-            # Выбираем ведущую строку
+            # Select pivot row
             min_ratio = float('inf')
             pivot_row_idx = None
             pivot_row_var = None
@@ -478,7 +494,7 @@ class SimplexMethod(QObject):
                     ratio_data.append({
                         'row_var': row[0],
                         'skipped': True,
-                        'reason': 'F или совпадает с ведущим столбцом'
+                        'reason': 'F or matches pivot column'
                     })
                     continue
 
@@ -504,7 +520,7 @@ class SimplexMethod(QObject):
                         'free_term': float(free_term),
                         'pivot_col_val': float(pivot_col_val),
                         'skipped': True,
-                        'reason': 'Коэффициент в ведущем столбце <= 0'
+                        'reason': 'Coefficient in pivot column <= 0'
                     })
 
             iteration_info['ratio_data'] = ratio_data
@@ -514,13 +530,15 @@ class SimplexMethod(QObject):
                 iteration_info['unbounded'] = True
                 self.solution_results['iterations'].append(iteration_info)
                 self.log_emitter.log_signal.emit("❌ Problem is unbounded!")
+                # Emit final points
+                self.update_signal.emit(np.array(self.points, dtype=float))
                 break
 
-            # Опорный элемент
+            # Pivot element
             pivot_element = frac_rows[pivot_row_idx][pivot_col_idx]
             iteration_info['pivot_element'] = float(pivot_element)
 
-            # Создаем новую таблицу
+            # Create new table
             new_table = PrettyTable(headers)
             new_table.float_format = ".2f"
             new_rows = []
@@ -537,10 +555,10 @@ class SimplexMethod(QObject):
                     ]
                 new_rows.append(new_row)
 
-            # Обновляем базисную переменную
+            # Update basis variable
             new_rows[pivot_row_idx][0] = str(pivot_col_var)
 
-            # Конвертируем Fraction в float для отображения
+            # Convert Fraction to float for display
             table_rows = []
             for row in new_rows:
                 display_row = [row[0]] + [float(val) for val in row[1:]]

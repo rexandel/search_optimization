@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1231</width>
-    <height>796</height>
+    <width>1905</width>
+    <height>919</height>
    </rect>
   </property>
   <property name="palette">
@@ -148,7 +148,7 @@
      </spacer>
     </item>
     <item row="1" column="1">
-     <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,1">
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2">
       <item>
        <widget class="Visualization3DWidget" name="openGLWidget"/>
       </item>
@@ -791,8 +791,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1231</width>
-     <height>21</height>
+     <width>1905</width>
+     <height>26</height>
     </rect>
    </property>
   </widget>
