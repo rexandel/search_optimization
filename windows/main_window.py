@@ -1,15 +1,14 @@
 from PyQt5.QtWidgets import QMainWindow, QLineEdit
 from PyQt5 import uic, QtCore
 from PyQt5.QtCore import Qt
-import numpy as np
-from sympy.strategies.core import switch
 
 from windows import FunctionManagerWindow
 from optimization_methods import GradientDescent, SimplexMethod
 from utils import LogEmitter, FunctionManagerHelper
 
+import numpy as np
 import threading
-
+import matplotlib.pyplot as plt
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -56,9 +55,7 @@ class MainWindow(QMainWindow):
 
     def update_current_tab_line_edits(self):
         self.current_tab_line_edits.clear()
-
         current_tab = self.tabWidget.currentWidget()
-
         if current_tab:
             line_edits = current_tab.findChildren(QLineEdit)
             self.current_tab_line_edits = line_edits
@@ -98,24 +95,17 @@ class MainWindow(QMainWindow):
         self.openGLWidget.restore_default_view()
 
     def on_function_selected(self, index):
-        """Обработчик выбора функции из выпадающего списка"""
         current_func = self.function_manager_helper.get_function_by_index(index)
+        self.openGLWidget.update_optimization_path(np.array([]))
         if current_func:
             self.function_manager_helper.set_current_function(index)
-
-            # Очищаем предыдущие ограничения
             self.openGLWidget.clear_constraints()
-
-            # Устанавливаем функцию для визуализации
             self.openGLWidget.set_function(current_func['function'])
 
-            # Добавляем ограничения из JSON
             for constraint in current_func['constraints']:
                 self.openGLWidget.add_constraint(constraint['function'])
 
-            # Перестраиваем данные функции с учетом ограничений
             self.openGLWidget.build_objective_function_data()
-
             self.statusbar.showMessage(f"Selected function: {current_func['name']}")
 
     def show_function_manager_window(self):
@@ -266,10 +256,6 @@ class MainWindow(QMainWindow):
             return
 
         try:
-            import matplotlib.pyplot as plt
-            from mpl_toolkits.mplot3d import Axes3D
-            import numpy as np
-
             x_min = -5
             x_max = 5
             y_min = -5

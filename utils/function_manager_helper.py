@@ -33,20 +33,15 @@ class FunctionManagerHelper:
                 continue
 
             try:
-                # Парсинг основной функции
                 func_object = eval(func_data['python_formula'], {'np': np}, {})
-                test_value = func_object(0, 0)  # Тестируем функцию
 
-                # Парсинг ограничений
                 constraints = []
                 if 'constraints' in func_data and isinstance(func_data['constraints'], list):
                     for constraint in func_data['constraints']:
                         if 'python_formula' in constraint:
                             try:
                                 constraint_func = eval(constraint['python_formula'], {'np': np}, {})
-                                test_constraint = constraint_func(0, 0)  # Тестируем ограничение
                                 constraints.append({
-                                    'name': constraint.get('name', 'Unnamed constraint'),
                                     'formula': constraint.get('formula', ''),
                                     'function': constraint_func
                                 })
