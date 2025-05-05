@@ -277,6 +277,121 @@ def build_simplex_table(kkt_system, artificial_system):
     return table
 
 
+def solve_simplex_table(kkt_system, artificial_system, simplex_table):
+    variables_order = (
+        kkt_system['variables'] +
+        kkt_system['lambdas'] +
+        kkt_system['vs'] +
+        kkt_system['ws'] +
+        artificial_system['z_vars']
+    )
+    # Условия дополняющей нежесткости
+    complementary_slackness = kkt_system['complementary_slackness']
+    # Преобразуем таблицу в список строк для удобства обработки
+    table_rows = simplex_table._rows
+    headers = simplex_table.field_names
+    iteration = 1
+    while True:
+        print(f"\n### Итерация {iteration} ###")
+        print(simplex_table)
+        # Извлекаем строку целевой функции
+        f_row = [row for row in table_rows if row[0] == 'F'][0]
+        f_coeffs = {headers[i]: float(coef) for i, coef in enumerate(f_row[2:], 2)}
+        # Проверяем оптимальность (все коэффициенты в строке F <= 0)
+        is_optimal = all(coef <= 0 for coef in f_row[2:])
+        if is_optimal:
+            print("Найдено оптимальное решение.")
+            solution = {}
+            for row in table_rows:
+                if row[0] != 'F':
+                    basis_var = row[0]
+                    free_term = row[1]
+                    solution[basis_var] = free_term
+            for var in variables_order:
+                if str(var) not in solution:
+                    solution[str(var)] = 0.0
+            print("Решение:")
+            for var, value in solution.items():
+                print(f"{var} = {value:.6f}")
+            print(f"Значение целевой функции: {f_row[1]:.6f}")
+            return solution
+        # Выбираем ведущий столбец с учетом условий дополняющей нежесткости
+        max_coeff = -float('inf')
+        pivot_col_idx = None
+        pivot_col_var = None
+        for i, var in enumerate(variables_order, 2):
+            coef = f_coeffs[str(var)]
+            if coef > max_coeff:
+                # Проверяем условия дополняющей нежесткости
+                can_use = True
+                for var1, var2 in complementary_slackness:
+                    if var == var1:
+                        # Проверяем, является ли var2 базисной и положительной
+                        for row in table_rows:
+                            if row[0] == str(var2) and row[1] > 0:
+                                can_use = False
+                                break
+                    elif var == var2:
+                        for row in table_rows:
+                            if row[0] == str(var1) and row[1] > 0:
+                                can_use = False
+                                break
+                if can_use:
+                    max_coeff = coef
+                    pivot_col_idx = i
+                    pivot_col_var = var
+        if pivot_col_idx is None:
+            print("Нет подходящего ведущего столбца с учетом условий дополняющей нежесткости.")
+            return None
+        print(f"Ведущий столбец: {pivot_col_var} (коэффициент = {max_coeff:.2f})")
+        # Выбираем ведущую строку
+        min_ratio = float('inf')
+        pivot_row_idx = None
+        pivot_row_var = None
+        for i, row in enumerate(table_rows):
+            if row[0] == 'F':
+                continue
+            free_term = float(row[1])
+            pivot_col_val = float(row[pivot_col_idx])
+            if pivot_col_val > 0:
+                ratio = free_term / pivot_col_val
+                if ratio < min_ratio:
+                    min_ratio = ratio
+                    pivot_row_idx = i
+                    pivot_row_var = row[0]
+        if pivot_row_idx is None:
+            print("Задача неограничена (нет ведущей строки).")
+            return None
+        print(f"Ведущая строка: {pivot_row_var} (отношение = {min_ratio:.6f})")
+        # Опорный элемент
+        pivot_element = float(table_rows[pivot_row_idx][pivot_col_idx])
+        print(f"Опорный элемент: {pivot_element:.6f}")
+        # Создаем новую таблицу
+        new_table = PrettyTable(headers)
+        new_table.float_format = ".2f"
+        new_rows = []
+        for i, row in enumerate(table_rows):
+            new_row = row[:]  # Копия строки
+            if i == pivot_row_idx:
+                # Делим ведущую строку на опорный элемент
+                new_row = [row[0]] + [float(val) / pivot_element for val in row[1:]]
+            else:
+                # Обновляем остальные строки
+                factor = float(row[pivot_col_idx])
+                new_row = [row[0]] + [
+                    float(row[j]) - factor * float(table_rows[pivot_row_idx][j]) / pivot_element
+                    for j in range(1, len(row))
+                ]
+            new_rows.append(new_row)
+        # Обновляем базисную переменную в ведущей строке
+        new_rows[pivot_row_idx][0] = str(pivot_col_var)
+        # Добавляем строки в новую таблицу
+        for row in new_rows:
+            new_table.add_row(row)
+        table_rows = new_rows
+        simplex_table = new_table
+        iteration += 1
+
 def solve_kkt_example():
     # Определение переменных
     x, y = sp.symbols('x y', real=True)
@@ -288,29 +403,29 @@ def solve_kkt_example():
 
     # Ограничения в форме g(x) <= 0
     constraints = [
-        # x + 2*y - 2
         x + y - 1,
         2 * x + 3 * y - 4
+
+        # x + 2*y - 2
     ]
 
     print("\n#########################################################")
     print("# РЕШЕНИЕ ЗАДАЧИ ОПТИМИЗАЦИИ МЕТОДОМ ИСКУССТВЕННЫХ ПЕРЕМЕННЫХ #")
     print("#########################################################\n")
-
-    # Формирование системы KKT
     kkt_system = dynamic_kkt_system(obj_func, constraints, variables)
-
-    # Добавление искусственных переменных
     artificial_system = add_artificial_variables(kkt_system, kkt_system['kkt_conditions'])
-
-    # Построение и вывод симплекс-таблицы
     simplex_table = build_simplex_table(kkt_system, artificial_system)
     print("\n### Первая симплекс-таблица ###")
     print(simplex_table)
-
-    print("\n### Система готова для решения ###")
-    print("Чтобы решить систему, нужно исследовать все возможные комбинации")
-    print("условий дополняющей нежесткости.")
+    solution = solve_simplex_table(kkt_system, artificial_system, simplex_table)
+    print("\n### Результаты решения ###")
+    if solution:
+        print("Найдено решение:")
+        for var, value in solution.items():
+            print(f"{var} = {value:.6f}")
+    else:
+        print("Решение не найдено.")
+    return solution
 
 
 if __name__ == "__main__":
