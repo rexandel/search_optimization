@@ -4,11 +4,11 @@ from fractions import Fraction
 import copy
 from scipy.optimize import minimize
 from PyQt5.QtCore import QObject, pyqtSignal
-
+import numpy as np
 
 class SimplexMethod(QObject):
     finished_signal = pyqtSignal()
-    update_signal = pyqtSignal(dict)  # Будем передавать словарь с данными итерации
+    update_signal = pyqtSignal(np.ndarray)
 
     def __init__(self, params_dict, log_emitter):
         super().__init__()
@@ -16,6 +16,14 @@ class SimplexMethod(QObject):
         self.constraints = params_dict['constraints']
         self.variables = params_dict['variables']
         self.max_iterations = params_dict.get('max_iterations', 100)
+        self.points = []
+
+        if not isinstance(self.function, sp.Expr):
+            raise ValueError("Function must be a sympy expression")
+        if not all(isinstance(c, sp.Expr) for c in self.constraints):
+            raise ValueError("All constraints must be sympy expressions")
+        if not all(isinstance(v, sp.Symbol) for v in self.variables):
+            raise ValueError("Variables must be sympy symbols")
 
         self.log_emitter = log_emitter
         self._is_running = False
@@ -147,219 +155,463 @@ class SimplexMethod(QObject):
 
         self.log_emitter.log_signal.emit("\n".join(message))
 
-def _add_artificial_variables(self):
-    self.log_emitter.log_signal.emit("🔧 Adding artificial variables...")
+    def _add_artificial_variables(self):
+        self.log_emitter.log_signal.emit("🔧 Adding artificial variables...")
 
-    variables = self.kkt_system['all_variables']
-    vs = self.kkt_system['vs']
-    ws = self.kkt_system['ws']
-    z_vars = []
-    modified_equations = []
-    z_expressions = {}
-    artificial_info = []
+        variables = self.kkt_system['all_variables']
+        vs = self.kkt_system['vs']
+        ws = self.kkt_system['ws']
+        z_vars = []
+        modified_equations = []
+        z_expressions = {}
+        artificial_info = []
 
-    for i, eq in enumerate(self.kkt_system['kkt_conditions']):
-        left_part = eq
-        right_part = 0
-        free_term = left_part.as_coeff_add(*variables)[0]
+        for i, eq in enumerate(self.kkt_system['kkt_conditions']):
+            left_part = eq
+            right_part = 0
+            free_term = left_part.as_coeff_add(*variables)[0]
 
-        if i < len(vs):
-            dop_var = vs[i]
-            dop_var_name = f'v{i + 1}'
-            dop_var_sign = -1
-        else:
-            dop_var = ws[i - len(vs)]
-            dop_var_name = f'w{i - len(vs) + 1}'
-            dop_var_sign = 1
+            if i < len(vs):
+                dop_var = vs[i]
+                dop_var_name = f'v{i + 1}'
+                dop_var_sign = -1
+            else:
+                dop_var = ws[i - len(vs)]
+                dop_var_name = f'w{i - len(vs) + 1}'
+                dop_var_sign = 1
 
-        need_artificial = (dop_var_sign < 0 and free_term < 0) or (dop_var_sign > 0 and free_term > 0)
+            need_artificial = (dop_var_sign < 0 and free_term < 0) or (dop_var_sign > 0 and free_term > 0)
 
-        eq_info = {
-            'equation_index': i + 1,
-            'equation': eq,
-            'free_term': free_term,
-            'dop_var_name': dop_var_name,
-            'dop_var_sign': dop_var_sign,
-            'need_artificial': need_artificial
+            eq_info = {
+                'equation_index': i + 1,
+                'equation': eq,
+                'free_term': free_term,
+                'dop_var_name': dop_var_name,
+                'dop_var_sign': dop_var_sign,
+                'need_artificial': need_artificial
+            }
+
+            right_part_final = -free_term
+            modified_eq = left_part - free_term
+
+            if need_artificial:
+                z_var = sp.symbols(f'z{i + 1}', real=True)
+                z_vars.append(z_var)
+                modified_eq = modified_eq + z_var
+                z_expressions[z_var] = -left_part
+                eq_info['z_var'] = z_var
+                eq_info['modified_eq'] = modified_eq
+                eq_info['right_part'] = right_part_final
+            else:
+                eq_info['modified_eq'] = modified_eq
+                eq_info['right_part'] = right_part_final
+
+            artificial_info.append(eq_info)
+            modified_equations.append((modified_eq, right_part_final))
+
+        self.artificial_system = {
+            'z_vars': z_vars,
+            'z_expressions': z_expressions,
+            'F_z': sum(z_vars) if z_vars else None,
+            'F_z_expanded': sum(z_expressions[z] for z in z_vars) if z_vars else None,
+            'modified_equations': modified_equations,
+            'artificial_info': artificial_info
         }
 
-        right_part_final = -free_term
-        modified_eq = left_part - free_term
+        self._log_artificial_variables()
 
-        if need_artificial:
-            z_var = sp.symbols(f'z{i + 1}', real=True)
-            z_vars.append(z_var)
-            modified_eq = modified_eq + z_var
-            z_expressions[z_var] = -left_part
-            eq_info['z_var'] = z_var
-            eq_info['modified_eq'] = modified_eq
-            eq_info['right_part'] = right_part_final
+
+    def _log_artificial_variables(self):
+        msg = ["### Artificial Variables ###"]
+
+        for eq_info in self.artificial_system['artificial_info']:
+            i = eq_info['equation_index']
+            info = [
+                f"Equation {i}: {eq_info['equation']} = 0",
+                f"  Free term: {eq_info['free_term']}",
+                f"  Aux variable: {eq_info['dop_var_name']} (sign: {'+' if eq_info['dop_var_sign'] > 0 else '-'})",
+                f"  Need artificial: {'Yes' if eq_info['need_artificial'] else 'No'}"
+            ]
+
+            if eq_info['need_artificial']:
+                info.append(f"  Added z{i}: {eq_info['modified_eq']} = {eq_info['right_part']}")
+            else:
+                info.append(f"  Modified equation: {eq_info['modified_eq']} = {eq_info['right_part']}")
+
+            msg.extend(info)
+
+        if self.artificial_system['z_vars']:
+            msg.extend([
+                "",
+                "### Auxiliary LP Function ###",
+                f"F(z) = {self.artificial_system['F_z']}",
+                f"F(z) expanded: {self.artificial_system['F_z_expanded']}",
+                "",
+                "### Final System ###",
+                *[f"Equation {i + 1}: {eq} = {rhs}" for i, (eq, rhs) in
+                  enumerate(self.artificial_system['modified_equations'])],
+                "",
+                "### Non-negativity Conditions ###",
+                *[f"{z} >= 0" for z in self.artificial_system['z_vars']]
+            ])
         else:
-            eq_info['modified_eq'] = modified_eq
-            eq_info['right_part'] = right_part_final
+            msg.append("\nNo artificial variables needed.")
 
-        artificial_info.append(eq_info)
-        modified_equations.append((modified_eq, right_part_final))
-
-    self.artificial_system = {
-        'z_vars': z_vars,
-        'z_expressions': z_expressions,
-        'F_z': sum(z_vars) if z_vars else None,
-        'F_z_expanded': sum(z_expressions[z] for z in z_vars) if z_vars else None,
-        'modified_equations': modified_equations,
-        'artificial_info': artificial_info
-    }
-
-    self._log_artificial_variables()
+        self.log_emitter.log_signal.emit("\n".join(msg))
 
 
-def _log_artificial_variables(self):
-    msg = ["### Artificial Variables ###"]
+    def _build_simplex_table(self):
+        self.log_emitter.log_signal.emit("🔧 Building simplex table...")
 
-    for eq_info in self.artificial_system['artificial_info']:
-        i = eq_info['equation_index']
-        info = [
-            f"Equation {i}: {eq_info['equation']} = 0",
-            f"  Free term: {eq_info['free_term']}",
-            f"  Aux variable: {eq_info['dop_var_name']} (sign: {'+' if eq_info['dop_var_sign'] > 0 else '-'})",
-            f"  Need artificial: {'Yes' if eq_info['need_artificial'] else 'No'}"
-        ]
+        variables_order = (
+                self.kkt_system['variables'] +
+                self.kkt_system['lambdas'] +
+                self.kkt_system['vs'] +
+                self.kkt_system['ws'] +
+                self.artificial_system['z_vars']
+        )
 
-        if eq_info['need_artificial']:
-            info.append(f"  Added z{i}: {eq_info['modified_eq']} = {eq_info['right_part']}")
-        else:
-            info.append(f"  Modified equation: {eq_info['modified_eq']} = {eq_info['right_part']}")
+        headers = ['Basis', 'RHS'] + [str(var) for var in variables_order]
+        table = PrettyTable(headers)
+        table.float_format = ".2f"
 
-        msg.extend(info)
+        rows_data = []
+        for eq, rhs in self.artificial_system['modified_equations']:
+            coeffs = [eq.coeff(var) for var in variables_order]
+            basis_var = None
 
-    if self.artificial_system['z_vars']:
-        msg.extend([
-            "",
-            "### Auxiliary LP Function ###",
-            f"F(z) = {self.artificial_system['F_z']}",
-            f"F(z) expanded: {self.artificial_system['F_z_expanded']}",
-            "",
-            "### Final System ###",
-            *[f"Equation {i + 1}: {eq} = {rhs}" for i, (eq, rhs) in
-              enumerate(self.artificial_system['modified_equations'])],
-            "",
-            "### Non-negativity Conditions ###",
-            *[f"{z} >= 0" for z in self.artificial_system['z_vars']]
-        ])
-    else:
-        msg.append("\nNo artificial variables needed.")
-
-    self.log_emitter.log_signal.emit("\n".join(msg))
-
-
-def _build_simplex_table(self):
-    self.log_emitter.log_signal.emit("🔧 Building simplex table...")
-
-    variables_order = (
-            self.kkt_system['variables'] +
-            self.kkt_system['lambdas'] +
-            self.kkt_system['vs'] +
-            self.kkt_system['ws'] +
-            self.artificial_system['z_vars']
-    )
-
-    headers = ['Basis', 'RHS'] + [str(var) for var in variables_order]
-    table = PrettyTable(headers)
-    table.float_format = ".2f"
-
-    rows_data = []
-    for eq, rhs in self.artificial_system['modified_equations']:
-        coeffs = [eq.coeff(var) for var in variables_order]
-        basis_var = None
-
-        for z_var in self.artificial_system['z_vars']:
-            if eq.coeff(z_var) == 1:
-                basis_var = z_var
-                break
-
-        if not basis_var:
-            for w_var in self.kkt_system['ws']:
-                if eq.coeff(w_var) == 1:
-                    basis_var = w_var
+            for z_var in self.artificial_system['z_vars']:
+                if eq.coeff(z_var) == 1:
+                    basis_var = z_var
                     break
 
-        row = [str(basis_var), float(rhs)] + [float(coef) for coef in coeffs]
-        table.add_row(row)
-        rows_data.append({
-            'basis_var': basis_var,
-            'rhs': rhs,
-            'coeffs': coeffs
-        })
+            if not basis_var:
+                for w_var in self.kkt_system['ws']:
+                    if eq.coeff(w_var) == 1:
+                        basis_var = w_var
+                        break
 
-    f_row_data = None
-    if self.artificial_system['F_z_expanded'] is not None:
-        f_coeffs = [-self.artificial_system['F_z_expanded'].coeff(var) for var in variables_order]
-        f_constant = self.artificial_system['F_z_expanded'].as_coeff_add(*variables_order)[0]
-        row = ['F', float(f_constant)] + [float(coef) for coef in f_coeffs]
-        table.add_row(row)
-        f_row_data = {
-            'constant': f_constant,
-            'coeffs': f_coeffs
+            row = [str(basis_var), float(rhs)] + [float(coef) for coef in coeffs]
+            table.add_row(row)
+            rows_data.append({
+                'basis_var': basis_var,
+                'rhs': rhs,
+                'coeffs': coeffs
+            })
+
+        f_row_data = None
+        if self.artificial_system['F_z_expanded'] is not None:
+            f_coeffs = [-self.artificial_system['F_z_expanded'].coeff(var) for var in variables_order]
+            f_constant = self.artificial_system['F_z_expanded'].as_coeff_add(*variables_order)[0]
+            row = ['F', float(f_constant)] + [float(coef) for coef in f_coeffs]
+            table.add_row(row)
+            f_row_data = {
+                'constant': f_constant,
+                'coeffs': f_coeffs
+            }
+
+        self.simplex_data = {
+            'table': table,
+            'rows_data': rows_data,
+            'f_row_data': f_row_data,
+            'variables_order': variables_order,
+            'headers': headers
         }
 
-    self.simplex_data = {
-        'table': table,
-        'rows_data': rows_data,
-        'f_row_data': f_row_data,
-        'variables_order': variables_order,
-        'headers': headers
-    }
+        self.log_emitter.log_signal.emit("### Initial Simplex Table ###\n" + str(table))
 
-    self.log_emitter.log_signal.emit("### Initial Simplex Table ###\n" + str(table))
+    def _solve_simplex(self):
+        self.log_emitter.log_signal.emit("🔧 Solving with simplex method...")
 
+        variables_order = self.simplex_data['variables_order']
+        z_vars = self.artificial_system['z_vars']
+        vs = self.kkt_system['vs']
+        ws = self.kkt_system['ws']
+        complementary_slackness = self.kkt_system['complementary_slackness']
 
-def _solve_simplex(self):
-    self.log_emitter.log_signal.emit("🔧 Solving with simplex method...")
+        simplex_table = self.simplex_data['table']
+        table_rows = simplex_table._rows
+        headers = self.simplex_data['headers']
 
-    variables_order = self.simplex_data['variables_order']
-    z_vars = self.artificial_system['z_vars']
-    vs = self.kkt_system['vs']
-    ws = self.kkt_system['ws']
-    complementary_slackness = self.kkt_system['complementary_slackness']
+        self.current_iteration = 0
+        basis_history = set()
+        self.solution_results = {'iterations': []}
+        self.points = []  # Initialize points list for [x, y] coordinates
 
-    simplex_table = self.simplex_data['table']
-    table_rows = simplex_table._rows
-    headers = self.simplex_data['headers']
+        while self.current_iteration < self.max_iterations and self._is_running:
+            self.current_iteration += 1
+            iteration_info = {
+                'iteration': self.current_iteration,
+                'table': copy.deepcopy(simplex_table),
+                'current_solution': {},
+                'objective_value': None
+            }
 
-    self.current_iteration = 0
-    basis_history = set()
-    self.solution_results = {'iterations': []}
+            # Convert rows to Fraction for precision
+            frac_rows = []
+            for row in table_rows:
+                new_row = [row[0]] + [Fraction(str(val)).limit_denominator() for val in row[1:]]
+                frac_rows.append(new_row)
 
-    while self.current_iteration < self.max_iterations and self._is_running:
-        self.current_iteration += 1
-        iteration_info = {
-            'iteration': self.current_iteration,
-            'table': copy.deepcopy(simplex_table),
-        }
+            # Extract current basis
+            current_basis = tuple(row[0] for row in frac_rows if row[0] != 'F')
+            basis_str = str(current_basis)
+            iteration_info['current_basis'] = current_basis
 
-        # Конвертируем строки в Fraction для точности
-        frac_rows = []
-        for row in table_rows:
-            new_row = [row[0]] + [Fraction(str(val)).limit_denominator() for val in row[1:]]
-            frac_rows.append(new_row)
+            if basis_str in basis_history:
+                iteration_info['cycle_detected'] = True
+                self.solution_results['iterations'].append(iteration_info)
+                final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
+                                                             complementary_slackness)
+                self.solution_results['solution'] = final_solution
+                self.log_emitter.log_signal.emit("🔄 Cycle detected in simplex method!")
+                # Emit final points
+                self.update_signal.emit(np.array(self.points, dtype=float))
+                break
 
-        # Извлекаем текущий базис
-        current_basis = tuple(row[0] for row in frac_rows if row[0] != 'F')
-        basis_str = str(current_basis)
-        iteration_info['current_basis'] = current_basis
+            basis_history.add(basis_str)
 
-        if basis_str in basis_history:
-            iteration_info['cycle_detected'] = True
+            # Compute current solution
+            solution = {}
+            for row in frac_rows:
+                if row[0] != 'F':
+                    basis_var = row[0]
+                    free_term = float(row[1])
+                    solution[basis_var] = free_term
+
+            for var in variables_order:
+                if str(var) not in solution:
+                    solution[str(var)] = 0.0
+
+            self.current_solution = solution
+            iteration_info['current_solution'] = solution
+
+            # Store [x, y] coordinates and compute objective value for logging
+            if 'x' in solution and 'y' in solution:
+                try:
+                    x, y = solution['x'], solution['y']
+                    self.points.append([x, y])  # Append [x, y] to points
+                    obj_value = float(sp.lambdify(self.variables, self.function)(x, y))
+                    iteration_info['objective_value'] = obj_value
+
+                    # Emit points as a 2D numpy array
+                    points_array = np.array(self.points, dtype=float)  # Shape: (n, 2)
+                    self.update_signal.emit(points_array)
+
+                except Exception as e:
+                    self.log_emitter.log_signal.emit(f"⚠ Error calculating objective: {str(e)}")
+
+            # Извлекаем строку целевой функции
+            f_row = [row for row in frac_rows if row[0] == 'F'][0]
+            f_coeffs = {headers[i]: coef for i, coef in enumerate(f_row[2:], 2)}
+            iteration_info['f_coeffs'] = {str(var): float(f_coeffs[str(var)]) for var in variables_order}
+
+            # Проверяем оптимальность
+            is_optimal = all(coef <= 0 for coef in f_row[2:])
+            iteration_info['is_optimal'] = is_optimal
+
+            if is_optimal:
+                self.solution_results['iterations'].append(iteration_info)
+                final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
+                                                             complementary_slackness)
+                self.solution_results['solution'] = final_solution
+                self.log_emitter.log_signal.emit("✅ Optimal solution found!")
+                break
+
+            # Выбираем ведущий столбец
+            max_coeff = float('-inf')
+            pivot_col_idx = None
+            pivot_col_var = None
+            basis_vars = {row[0] for row in frac_rows if row[0] != 'F'}
+
+            pivot_col_candidates = []
+            for i, var in enumerate(variables_order, 2):
+                coef = float(f_coeffs[str(var)])
+                is_basis = str(var) in basis_vars
+                candidate = {
+                    'var': var,
+                    'coef': coef,
+                    'is_basis': is_basis,
+                    'disqualified_reason': None
+                }
+
+                if coef > max_coeff and not is_basis:
+                    can_use = True
+                    for var1, var2 in complementary_slackness:
+                        if var == var1:
+                            for row in frac_rows:
+                                if row[0] == str(var2) and row[1] > 0:
+                                    can_use = False
+                                    candidate['disqualified_reason'] = f"{var2} базисная и положительная ({row[1]})"
+                                    break
+                        elif var == var2:
+                            for row in frac_rows:
+                                if row[0] == str(var1) and row[1] > 0:
+                                    can_use = False
+                                    candidate['disqualified_reason'] = f"{var1} базисная и положительная ({row[1]})"
+                                    break
+
+                    if can_use:
+                        max_coeff = coef
+                        pivot_col_idx = i
+                        pivot_col_var = var
+
+                pivot_col_candidates.append(candidate)
+
+            iteration_info['pivot_col_candidates'] = pivot_col_candidates
+            iteration_info['pivot_col'] = {'var': pivot_col_var, 'index': pivot_col_idx, 'coef': max_coeff}
+
+            if pivot_col_idx is None:
+                iteration_info['no_pivot_col'] = True
+                self.solution_results['iterations'].append(iteration_info)
+                self.log_emitter.log_signal.emit("❌ No suitable pivot column found!")
+                break
+
+            # Выбираем ведущую строку
+            min_ratio = float('inf')
+            pivot_row_idx = None
+            pivot_row_var = None
+
+            ratio_data = []
+            for i, row in enumerate(frac_rows):
+                if row[0] == 'F' or row[0] == str(pivot_col_var):
+                    ratio_data.append({
+                        'row_var': row[0],
+                        'skipped': True,
+                        'reason': 'F или совпадает с ведущим столбцом'
+                    })
+                    continue
+
+                free_term = row[1]
+                pivot_col_val = row[pivot_col_idx]
+
+                if pivot_col_val > 0:
+                    ratio = float(free_term / pivot_col_val)
+                    ratio_data.append({
+                        'row_var': row[0],
+                        'free_term': float(free_term),
+                        'pivot_col_val': float(pivot_col_val),
+                        'ratio': ratio
+                    })
+
+                    if ratio < min_ratio:
+                        min_ratio = ratio
+                        pivot_row_idx = i
+                        pivot_row_var = row[0]
+                else:
+                    ratio_data.append({
+                        'row_var': row[0],
+                        'free_term': float(free_term),
+                        'pivot_col_val': float(pivot_col_val),
+                        'skipped': True,
+                        'reason': 'Коэффициент в ведущем столбце <= 0'
+                    })
+
+            iteration_info['ratio_data'] = ratio_data
+            iteration_info['pivot_row'] = {'var': pivot_row_var, 'index': pivot_row_idx, 'ratio': min_ratio}
+
+            if pivot_row_idx is None:
+                iteration_info['unbounded'] = True
+                self.solution_results['iterations'].append(iteration_info)
+                self.log_emitter.log_signal.emit("❌ Problem is unbounded!")
+                break
+
+            # Опорный элемент
+            pivot_element = frac_rows[pivot_row_idx][pivot_col_idx]
+            iteration_info['pivot_element'] = float(pivot_element)
+
+            # Создаем новую таблицу
+            new_table = PrettyTable(headers)
+            new_table.float_format = ".2f"
+            new_rows = []
+
+            for i, row in enumerate(frac_rows):
+                if i == pivot_row_idx:
+                    new_row = [row[0]] + [val / pivot_element for val in row[1:]]
+                else:
+                    factor = row[pivot_col_idx]
+                    pivot_row = [val / pivot_element for val in frac_rows[pivot_row_idx][1:]]
+                    new_row = [row[0]] + [
+                        row[j] - factor * pivot_row[j - 1]
+                        for j in range(1, len(row))
+                    ]
+                new_rows.append(new_row)
+
+            # Обновляем базисную переменную
+            new_rows[pivot_row_idx][0] = str(pivot_col_var)
+
+            # Конвертируем Fraction в float для отображения
+            table_rows = []
+            for row in new_rows:
+                display_row = [row[0]] + [float(val) for val in row[1:]]
+                new_table.add_row(display_row)
+                table_rows.append(display_row)
+
+            frac_rows = new_rows
+            simplex_table = new_table
+
             self.solution_results['iterations'].append(iteration_info)
+            self._log_simplex_iteration(iteration_info)
+
+        if self.current_iteration >= self.max_iterations:
             final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
                                                          complementary_slackness)
             self.solution_results['solution'] = final_solution
-            self.log_emitter.log_signal.emit("🔄 Cycle detected in simplex method!")
-            break
+            self.log_emitter.log_signal.emit(f"⚠ Reached maximum iterations ({self.max_iterations})")
+            # Emit final points
+            self.update_signal.emit(np.array(self.points, dtype=float))
 
-        basis_history.add(basis_str)
 
-        # Вычисляем текущее значение целевой функции
+    def _log_simplex_iteration(self, iteration_info):
+        msg = [
+            f"\n### Iteration {iteration_info['iteration']} ###",
+            str(iteration_info['table']),
+            "",
+            "### F-row coefficients ###"
+        ]
+
+        for var, coef in iteration_info['f_coeffs'].items():
+            msg.append(f"{var}: {coef:.6f}")
+
+        msg.append("\n### Pivot Selection ###")
+        msg.append(
+            f"Leading column: {iteration_info['pivot_col']['var']} (coef: {iteration_info['pivot_col']['coef']:.6f})")
+
+        msg.append("\n### Ratios ###")
+        for ratio in iteration_info['ratio_data']:
+            if 'skipped' in ratio:
+                msg.append(f"Row {ratio['row_var']}: skipped ({ratio['reason']})")
+            else:
+                msg.append(
+                    f"Row {ratio['row_var']}: {ratio['free_term']:.6f} / {ratio['pivot_col_val']:.6f} = {ratio['ratio']:.6f}")
+
+        msg.append(
+            f"\nLeading row: {iteration_info['pivot_row']['var']} (ratio: {iteration_info['pivot_row']['ratio']:.6f})")
+        msg.append(f"Pivot element: {iteration_info['pivot_element']:.6f}")
+
+        if 'objective_value' in iteration_info:
+            msg.append(f"\nCurrent objective value: {iteration_info['objective_value']:.6f}")
+
+        self.log_emitter.log_signal.emit("\n".join(msg))
+
+
+    def _handle_final_solution(self, frac_rows, variables_order, z_vars, vs, ws, complementary_slackness):
+        f_row = [row for row in frac_rows if row[0] == 'F'][0]
+        f_value = float(f_row[1])
+
+        # Проверяем искусственные переменные
+        artificial_in_basis = any(
+            row[0] in [str(z) for z in z_vars] and float(row[1]) > 0 for row in frac_rows if row[0] != 'F')
+
+        # Проверяем дополнительные переменные
+        additional_vars = [str(v) for v in vs] + [str(w) for w in ws]
+        additional_in_basis = [
+            (row[0], float(row[1]))
+            for row in frac_rows
+            if row[0] != 'F' and row[0] in additional_vars and float(row[1]) > 0
+        ]
+
+        # Формируем решение
         solution = {}
         for row in frac_rows:
             if row[0] != 'F':
@@ -371,449 +623,209 @@ def _solve_simplex(self):
             if str(var) not in solution:
                 solution[str(var)] = 0.0
 
-        # Сохраняем текущее решение
-        self.current_solution = solution
-        iteration_info['current_solution'] = solution
-
-        # Вычисляем значение целевой функции
-        if 'x' in solution and 'y' in solution:
-            obj_value = float(sp.lambdify(self.variables, self.function)(solution['x'], solution['y']))
-            iteration_info['objective_value'] = obj_value
-
-        # Извлекаем строку целевой функции
-        f_row = [row for row in frac_rows if row[0] == 'F'][0]
-        f_coeffs = {headers[i]: coef for i, coef in enumerate(f_row[2:], 2)}
-        iteration_info['f_coeffs'] = {str(var): float(f_coeffs[str(var)]) for var in variables_order}
-
-        # Проверяем оптимальность
-        is_optimal = all(coef <= 0 for coef in f_row[2:])
-        iteration_info['is_optimal'] = is_optimal
-
-        if is_optimal:
-            self.solution_results['iterations'].append(iteration_info)
-            final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
-                                                         complementary_slackness)
-            self.solution_results['solution'] = final_solution
-            self.log_emitter.log_signal.emit("✅ Optimal solution found!")
-            break
-
-        # Выбираем ведущий столбец
-        max_coeff = float('-inf')
-        pivot_col_idx = None
-        pivot_col_var = None
-        basis_vars = {row[0] for row in frac_rows if row[0] != 'F'}
-
-        pivot_col_candidates = []
-        for i, var in enumerate(variables_order, 2):
-            coef = float(f_coeffs[str(var)])
-            is_basis = str(var) in basis_vars
-            candidate = {
-                'var': var,
-                'coef': coef,
-                'is_basis': is_basis,
-                'disqualified_reason': None
-            }
-
-            if coef > max_coeff and not is_basis:
-                can_use = True
-                for var1, var2 in complementary_slackness:
-                    if var == var1:
-                        for row in frac_rows:
-                            if row[0] == str(var2) and row[1] > 0:
-                                can_use = False
-                                candidate['disqualified_reason'] = f"{var2} базисная и положительная ({row[1]})"
-                                break
-                    elif var == var2:
-                        for row in frac_rows:
-                            if row[0] == str(var1) and row[1] > 0:
-                                can_use = False
-                                candidate['disqualified_reason'] = f"{var1} базисная и положительная ({row[1]})"
-                                break
-
-                if can_use:
-                    max_coeff = coef
-                    pivot_col_idx = i
-                    pivot_col_var = var
-
-            pivot_col_candidates.append(candidate)
-
-        iteration_info['pivot_col_candidates'] = pivot_col_candidates
-        iteration_info['pivot_col'] = {'var': pivot_col_var, 'index': pivot_col_idx, 'coef': max_coeff}
-
-        if pivot_col_idx is None:
-            iteration_info['no_pivot_col'] = True
-            self.solution_results['iterations'].append(iteration_info)
-            self.log_emitter.log_signal.emit("❌ No suitable pivot column found!")
-            break
-
-        # Выбираем ведущую строку
-        min_ratio = float('inf')
-        pivot_row_idx = None
-        pivot_row_var = None
-
-        ratio_data = []
-        for i, row in enumerate(frac_rows):
-            if row[0] == 'F' or row[0] == str(pivot_col_var):
-                ratio_data.append({
-                    'row_var': row[0],
-                    'skipped': True,
-                    'reason': 'F или совпадает с ведущим столбцом'
-                })
-                continue
-
-            free_term = row[1]
-            pivot_col_val = row[pivot_col_idx]
-
-            if pivot_col_val > 0:
-                ratio = float(free_term / pivot_col_val)
-                ratio_data.append({
-                    'row_var': row[0],
-                    'free_term': float(free_term),
-                    'pivot_col_val': float(pivot_col_val),
-                    'ratio': ratio
-                })
-
-                if ratio < min_ratio:
-                    min_ratio = ratio
-                    pivot_row_idx = i
-                    pivot_row_var = row[0]
-            else:
-                ratio_data.append({
-                    'row_var': row[0],
-                    'free_term': float(free_term),
-                    'pivot_col_val': float(pivot_col_val),
-                    'skipped': True,
-                    'reason': 'Коэффициент в ведущем столбце <= 0'
-                })
-
-        iteration_info['ratio_data'] = ratio_data
-        iteration_info['pivot_row'] = {'var': pivot_row_var, 'index': pivot_row_idx, 'ratio': min_ratio}
-
-        if pivot_row_idx is None:
-            iteration_info['unbounded'] = True
-            self.solution_results['iterations'].append(iteration_info)
-            self.log_emitter.log_signal.emit("❌ Problem is unbounded!")
-            break
-
-        # Опорный элемент
-        pivot_element = frac_rows[pivot_row_idx][pivot_col_idx]
-        iteration_info['pivot_element'] = float(pivot_element)
-
-        # Создаем новую таблицу
-        new_table = PrettyTable(headers)
-        new_table.float_format = ".2f"
-        new_rows = []
-
-        for i, row in enumerate(frac_rows):
-            if i == pivot_row_idx:
-                new_row = [row[0]] + [val / pivot_element for val in row[1:]]
-            else:
-                factor = row[pivot_col_idx]
-                pivot_row = [val / pivot_element for val in frac_rows[pivot_row_idx][1:]]
-                new_row = [row[0]] + [
-                    row[j] - factor * pivot_row[j - 1]
-                    for j in range(1, len(row))
-                ]
-            new_rows.append(new_row)
-
-        # Обновляем базисную переменную
-        new_rows[pivot_row_idx][0] = str(pivot_col_var)
-
-        # Конвертируем Fraction в float для отображения
-        table_rows = []
-        for row in new_rows:
-            display_row = [row[0]] + [float(val) for val in row[1:]]
-            new_table.add_row(display_row)
-            table_rows.append(display_row)
-
-        frac_rows = new_rows
-        simplex_table = new_table
-
-        self.solution_results['iterations'].append(iteration_info)
-
-        # Логирование итерации
-        self._log_simplex_iteration(iteration_info)
-
-        # Эмитируем сигнал обновления
-        self.update_signal.emit({
-            'iteration': self.current_iteration,
-            'table': str(simplex_table),
-            'solution': solution,
-            'objective_value': iteration_info.get('objective_value', None),
-            'is_optimal': is_optimal
-        })
-
-    if self.current_iteration >= self.max_iterations:
-        final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
-                                                     complementary_slackness)
-        self.solution_results['solution'] = final_solution
-        self.log_emitter.log_signal.emit(f"⚠ Reached maximum iterations ({self.max_iterations})")
-
-
-def _log_simplex_iteration(self, iteration_info):
-    msg = [
-        f"\n### Iteration {iteration_info['iteration']} ###",
-        str(iteration_info['table']),
-        "",
-        "### F-row coefficients ###"
-    ]
-
-    for var, coef in iteration_info['f_coeffs'].items():
-        msg.append(f"{var}: {coef:.6f}")
-
-    msg.append("\n### Pivot Selection ###")
-    msg.append(
-        f"Leading column: {iteration_info['pivot_col']['var']} (coef: {iteration_info['pivot_col']['coef']:.6f})")
-
-    msg.append("\n### Ratios ###")
-    for ratio in iteration_info['ratio_data']:
-        if 'skipped' in ratio:
-            msg.append(f"Row {ratio['row_var']}: skipped ({ratio['reason']})")
-        else:
-            msg.append(
-                f"Row {ratio['row_var']}: {ratio['free_term']:.6f} / {ratio['pivot_col_val']:.6f} = {ratio['ratio']:.6f}")
-
-    msg.append(
-        f"\nLeading row: {iteration_info['pivot_row']['var']} (ratio: {iteration_info['pivot_row']['ratio']:.6f})")
-    msg.append(f"Pivot element: {iteration_info['pivot_element']:.6f}")
-
-    if 'objective_value' in iteration_info:
-        msg.append(f"\nCurrent objective value: {iteration_info['objective_value']:.6f}")
-
-    self.log_emitter.log_signal.emit("\n".join(msg))
-
-
-def _handle_final_solution(self, frac_rows, variables_order, z_vars, vs, ws, complementary_slackness):
-    f_row = [row for row in frac_rows if row[0] == 'F'][0]
-    f_value = float(f_row[1])
-
-    # Проверяем искусственные переменные
-    artificial_in_basis = any(
-        row[0] in [str(z) for z in z_vars] and float(row[1]) > 0 for row in frac_rows if row[0] != 'F')
-
-    # Проверяем дополнительные переменные
-    additional_vars = [str(v) for v in vs] + [str(w) for w in ws]
-    additional_in_basis = [
-        (row[0], float(row[1]))
-        for row in frac_rows
-        if row[0] != 'F' and row[0] in additional_vars and float(row[1]) > 0
-    ]
-
-    # Формируем решение
-    solution = {}
-    for row in frac_rows:
-        if row[0] != 'F':
-            basis_var = row[0]
-            free_term = float(row[1])
-            solution[basis_var] = free_term
-
-    for var in variables_order:
-        if str(var) not in solution:
-            solution[str(var)] = 0.0
-
-    # Анализ дополнительных переменных
-    additional_analysis = []
-    for var, value in additional_in_basis:
-        analysis = {'var': var, 'value': value, 'implications': []}
-
-        for var1, var2 in complementary_slackness:
-            if str(var1) == var:
-                analysis['implications'].append({
-                    'condition': f"{var1} * {var2} = 0",
-                    'result': f"{var2} = 0"
-                })
-            elif str(var2) == var:
-                analysis['implications'].append({
-                    'condition': f"{var1} * {var2} = 0",
-                    'result': f"{var1} = 0"
-                })
-
-        additional_analysis.append(analysis)
-
-    result = {
-        'f_value': f_value,
-        'artificial_in_basis': artificial_in_basis,
-        'additional_in_basis': additional_in_basis,
-        'solution': solution,
-        'additional_analysis': additional_analysis,
-        'is_feasible': f_value == 0 and not artificial_in_basis
-    }
-
-    # Интерпретация активных ограничений
-    if result['is_feasible'] and additional_in_basis:
-        active_constraints = []
+        # Анализ дополнительных переменных
+        additional_analysis = []
         for var, value in additional_in_basis:
-            if var in [str(v) for v in vs]:
-                idx = [str(v) for v in vs].index(var)
-                active_constraints.append({
-                    'var': var,
-                    'type': 'non_negativity',
-                    'original_var': str(variables_order[idx]),
-                    'value': value
-                })
-            elif var in [str(w) for w in ws]:
-                idx = [str(w) for w in ws].index(var)
-                active_constraints.append({
-                    'var': var,
-                    'type': 'lambda',
-                    'original_var': f"lambda{idx + 1}",
-                    'value': value
-                })
-        result['active_constraints'] = active_constraints
+            analysis = {'var': var, 'value': value, 'implications': []}
 
-    self._log_final_solution(result)
-    return result
+            for var1, var2 in complementary_slackness:
+                if str(var1) == var:
+                    analysis['implications'].append({
+                        'condition': f"{var1} * {var2} = 0",
+                        'result': f"{var2} = 0"
+                    })
+                elif str(var2) == var:
+                    analysis['implications'].append({
+                        'condition': f"{var1} * {var2} = 0",
+                        'result': f"{var1} = 0"
+                    })
 
+            additional_analysis.append(analysis)
 
-def _log_final_solution(self, final_solution):
-    msg = ["\n### Final Solution ###"]
+        result = {
+            'f_value': f_value,
+            'artificial_in_basis': artificial_in_basis,
+            'additional_in_basis': additional_in_basis,
+            'solution': solution,
+            'additional_analysis': additional_analysis,
+            'is_feasible': f_value == 0 and not artificial_in_basis
+        }
 
-    if final_solution['is_feasible']:
-        msg.append("✅ Found feasible optimal solution")
-        msg.append("Solution:")
+        # Интерпретация активных ограничений
+        if result['is_feasible'] and additional_in_basis:
+            active_constraints = []
+            for var, value in additional_in_basis:
+                if var in [str(v) for v in vs]:
+                    idx = [str(v) for v in vs].index(var)
+                    active_constraints.append({
+                        'var': var,
+                        'type': 'non_negativity',
+                        'original_var': str(variables_order[idx]),
+                        'value': value
+                    })
+                elif var in [str(w) for w in ws]:
+                    idx = [str(w) for w in ws].index(var)
+                    active_constraints.append({
+                        'var': var,
+                        'type': 'lambda',
+                        'original_var': f"lambda{idx + 1}",
+                        'value': value
+                    })
+            result['active_constraints'] = active_constraints
 
-        for var, value in final_solution['solution'].items():
-            msg.append(f"{var} = {value:.6f}")
-
-        msg.append(f"Objective value: {final_solution['f_value']:.6f}")
-
-        if final_solution['additional_in_basis']:
-            msg.append("\nActive constraints:")
-            for constraint in final_solution['active_constraints']:
-                if constraint['type'] == 'non_negativity':
-                    msg.append(
-                        f"  {constraint['var']} > 0 => {constraint['original_var']} = 0 (non-negativity constraint active)")
-                else:
-                    msg.append(f"  {constraint['var']} > 0 => {constraint['original_var']} = 0 (constraint inactive)")
-    else:
-        msg.append("❌ No feasible solution found")
-        msg.append(f"F value: {final_solution['f_value']:.6f}")
-        msg.append(f"Artificial variables in basis: {final_solution['artificial_in_basis']}")
-
-    self.log_emitter.log_signal.emit("\n".join(msg))
-
-
-def _verify_with_scipy(self):
-    self.log_emitter.log_signal.emit("\n🔍 Verifying solution with scipy.optimize.minimize...")
-
-    # Преобразование целевой функции
-    def objective(vars):
-        return sp.lambdify(self.variables, self.function, 'numpy')(vars[0], vars[1])
-
-    # Преобразование ограничений
-    scipy_constraints = []
-    for constr in self.constraints:
-        def constraint_func(vars, c=constr):
-            return -sp.lambdify(self.variables, c, 'numpy')(vars[0], vars[1])  # -g_i(x, y) >= 0
-
-        scipy_constraints.append({
-            'type': 'ineq',
-            'fun': constraint_func
-        })
-
-    # Границы: x >= 0, y >= 0
-    bounds = [(0, None), (0, None)]
-
-    # Начальное приближение
-    initial_guess = [0, 0]
-
-    # Решение задачи
-    self.scipy_result = minimize(
-        objective,
-        initial_guess,
-        method='SLSQP',
-        bounds=bounds,
-        constraints=scipy_constraints
-    )
-
-    # Логирование результатов
-    msg = [
-        "### Scipy Optimization Results ###",
-        f"Solution: x = {self.scipy_result.x[0]:.6f}, y = {self.scipy_result.x[1]:.6f}",
-        f"Objective value: {self.scipy_result.fun:.6f}",
-        "Constraint values:",
-        *[
-            f"g{i + 1}(x,y) = {sp.lambdify(self.variables, c, 'numpy')(self.scipy_result.x[0], self.scipy_result.x[1]):.6f}"
-            for i, c in enumerate(self.constraints)],
-        f"Success: {self.scipy_result.success}",
-        f"Message: {self.scipy_result.message}"
-    ]
-
-    # Сравнение с симплекс-методом
-    if self.solution_results.get('solution', {}).get('is_feasible', False):
-        simplex_sol = self.solution_results['solution']['solution']
-        x_simplex = simplex_sol.get('x', 0)
-        y_simplex = simplex_sol.get('y', 0)
-
-        msg.extend([
-            "\n### Comparison ###",
-            f"Simplex solution: x = {x_simplex:.6f}, y = {y_simplex:.6f}",
-            f"Scipy solution: x = {self.scipy_result.x[0]:.6f}, y = {self.scipy_result.x[1]:.6f}",
-            f"Difference: Δx = {abs(x_simplex - self.scipy_result.x[0]):.6f}, Δy = {abs(y_simplex - self.scipy_result.x[1]):.6f}",
-            f"Objective difference: {abs(sp.lambdify(self.variables, self.function)(x_simplex, y_simplex) - self.scipy_result.fun):.6f}"
-        ])
-
-    self.log_emitter.log_signal.emit("\n".join(msg))
+        self._log_final_solution(result)
+        return result
 
 
-@property
-def function(self):
-    return self._function
+    def _log_final_solution(self, final_solution):
+        msg = ["\n### Final Solution ###"]
+
+        if final_solution['is_feasible']:
+            msg.append("✅ Found feasible optimal solution")
+            msg.append("Solution:")
+
+            for var, value in final_solution['solution'].items():
+                msg.append(f"{var} = {value:.6f}")
+
+            msg.append(f"Objective value: {final_solution['f_value']:.6f}")
+
+            if final_solution['additional_in_basis']:
+                msg.append("\nActive constraints:")
+                for constraint in final_solution['active_constraints']:
+                    if constraint['type'] == 'non_negativity':
+                        msg.append(
+                            f"  {constraint['var']} > 0 => {constraint['original_var']} = 0 (non-negativity constraint active)")
+                    else:
+                        msg.append(f"  {constraint['var']} > 0 => {constraint['original_var']} = 0 (constraint inactive)")
+        else:
+            msg.append("❌ No feasible solution found")
+            msg.append(f"F value: {final_solution['f_value']:.6f}")
+            msg.append(f"Artificial variables in basis: {final_solution['artificial_in_basis']}")
+
+        self.log_emitter.log_signal.emit("\n".join(msg))
 
 
-@function.setter
-def function(self, value):
-    if not isinstance(value, sp.Expr):
-        raise ValueError("Function must be a sympy expression")
-    self._function = value
+    def _verify_with_scipy(self):
+        self.log_emitter.log_signal.emit("\n🔍 Verifying solution with scipy.optimize.minimize...")
+
+        # Преобразование целевой функции
+        def objective(vars):
+            return sp.lambdify(self.variables, self.function, 'numpy')(vars[0], vars[1])
+
+        # Преобразование ограничений
+        scipy_constraints = []
+        for constr in self.constraints:
+            def constraint_func(vars, c=constr):
+                return -sp.lambdify(self.variables, c, 'numpy')(vars[0], vars[1])  # -g_i(x, y) >= 0
+
+            scipy_constraints.append({
+                'type': 'ineq',
+                'fun': constraint_func
+            })
+
+        # Границы: x >= 0, y >= 0
+        bounds = [(0, None), (0, None)]
+
+        # Начальное приближение
+        initial_guess = [0, 0]
+
+        # Решение задачи
+        self.scipy_result = minimize(
+            objective,
+            initial_guess,
+            method='SLSQP',
+            bounds=bounds,
+            constraints=scipy_constraints
+        )
+
+        # Логирование результатов
+        msg = [
+            "### Scipy Optimization Results ###",
+            f"Solution: x = {self.scipy_result.x[0]:.6f}, y = {self.scipy_result.x[1]:.6f}",
+            f"Objective value: {self.scipy_result.fun:.6f}",
+            "Constraint values:",
+            *[
+                f"g{i + 1}(x,y) = {sp.lambdify(self.variables, c, 'numpy')(self.scipy_result.x[0], self.scipy_result.x[1]):.6f}"
+                for i, c in enumerate(self.constraints)],
+            f"Success: {self.scipy_result.success}",
+            f"Message: {self.scipy_result.message}"
+        ]
+
+        # Сравнение с симплекс-методом
+        if self.solution_results.get('solution', {}).get('is_feasible', False):
+            simplex_sol = self.solution_results['solution']['solution']
+            x_simplex = simplex_sol.get('x', 0)
+            y_simplex = simplex_sol.get('y', 0)
+
+            msg.extend([
+                "\n### Comparison ###",
+                f"Simplex solution: x = {x_simplex:.6f}, y = {y_simplex:.6f}",
+                f"Scipy solution: x = {self.scipy_result.x[0]:.6f}, y = {self.scipy_result.x[1]:.6f}",
+                f"Difference: Δx = {abs(x_simplex - self.scipy_result.x[0]):.6f}, Δy = {abs(y_simplex - self.scipy_result.x[1]):.6f}",
+                f"Objective difference: {abs(sp.lambdify(self.variables, self.function)(x_simplex, y_simplex) - self.scipy_result.fun):.6f}"
+            ])
+
+        self.log_emitter.log_signal.emit("\n".join(msg))
 
 
-@property
-def constraints(self):
-    return self._constraints
+    @property
+    def function(self):
+        return self._function
 
 
-@constraints.setter
-def constraints(self, value):
-    if not isinstance(value, list) or not all(isinstance(c, sp.Expr) for c in value):
-        raise ValueError("Constraints must be a list of sympy expressions")
-    self._constraints = value
+    @function.setter
+    def function(self, value):
+        if not isinstance(value, sp.Expr):
+            raise ValueError("Function must be a sympy expression")
+        self._function = value
 
 
-@property
-def variables(self):
-    return self._variables
+    @property
+    def constraints(self):
+        return self._constraints
 
 
-@variables.setter
-def variables(self, value):
-    if not isinstance(value, list) or not all(isinstance(v, sp.Symbol) for v in value):
-        raise ValueError("Variables must be a list of sympy symbols")
-    self._variables = value
+    @constraints.setter
+    def constraints(self, value):
+        if not isinstance(value, list) or not all(isinstance(c, sp.Expr) for c in value):
+            raise ValueError("Constraints must be a list of sympy expressions")
+        self._constraints = value
 
 
-@property
-def max_iterations(self):
-    return self._max_iterations
+    @property
+    def variables(self):
+        return self._variables
 
 
-@max_iterations.setter
-def max_iterations(self, value):
-    if not isinstance(value, int) or value <= 0:
-        raise ValueError("Max iterations must be a positive integer")
-    self._max_iterations = value
+    @variables.setter
+    def variables(self, value):
+        if not isinstance(value, list) or not all(isinstance(v, sp.Symbol) for v in value):
+            raise ValueError("Variables must be a list of sympy symbols")
+        self._variables = value
 
 
-@property
-def is_running(self):
-    return self._is_running
+    @property
+    def max_iterations(self):
+        return self._max_iterations
 
 
-@property
-def current_solution(self):
-    return self._current_solution
+    @max_iterations.setter
+    def max_iterations(self, value):
+        if not isinstance(value, int) or value <= 0:
+            raise ValueError("Max iterations must be a positive integer")
+        self._max_iterations = value
 
 
-@current_solution.setter
-def current_solution(self, value):
-    self._current_solution = value
+    @property
+    def is_running(self):
+        return self._is_running
+
+
+    @property
+    def current_solution(self):
+        return self._current_solution
+
+
+    @current_solution.setter
+    def current_solution(self, value):
+        self._current_solution = value

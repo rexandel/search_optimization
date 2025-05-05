@@ -1,13 +1,6 @@
 {
   "functions": [
-    {
-      "name": "Himmelblau Function",
-      "formula": "f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2",
-      "latex_formula": "$f(x, y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2$",
-      "python_formula": "lambda x, y: (x**2 + y - 11)**2 + (x + y**2 - 7)**2",
-      "constraints": []
-    },
-    {
+        {
       "name": "My function",
       "formula": "f(x,y) = 2 * x^2 + 2 * x * y + 2 * y^2 - 4 * x - 6 * y",
       "python_formula": "lambda x, y: 2 * x**2 + 2 * x * y + 2 * y**2 - 4 * x - 6 * y",
@@ -25,6 +18,13 @@
           "python_formula": "lambda x, y: -y"
         }
       ]
+    },
+    {
+      "name": "Himmelblau Function",
+      "formula": "f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2",
+      "latex_formula": "$f(x, y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2$",
+      "python_formula": "lambda x, y: (x**2 + y - 11)**2 + (x + y**2 - 7)**2",
+      "constraints": []
     },
     {
       "name": "Rastrigin Function",

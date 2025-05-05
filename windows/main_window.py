@@ -3,9 +3,10 @@ from PyQt5 import uic, QtCore
 from PyQt5.QtCore import Qt
 
 from windows import FunctionManagerWindow
-from optimization_methods import GradientDescent, OldSimplexMethod
+from optimization_methods import GradientDescent, OldSimplexMethod, SimplexMethod
 from utils import LogEmitter, FunctionManagerHelper
 
+import sympy as sp
 import numpy as np
 import threading
 import matplotlib.pyplot as plt
@@ -187,24 +188,6 @@ class MainWindow(QMainWindow):
             self.gradient_descent.update_signal.connect(self.openGLWidget.update_optimization_path)
             self.statusbar.showMessage("Optimization started")
         elif current_index == 1:
-            try:
-                x_min = -5
-                x_max = 5
-                y_min = -5
-                y_max = 5
-                segments_x = int(self.simplexSegmentsXLineEdit.text())
-                segments_y = int(self.simplexSegmentsYLineEdit.text())
-
-                if x_min >= x_max or y_min >= y_max:
-                    self.statusbar.showMessage("Error: Min values must be less than max values")
-                    return
-                if segments_x <= 0 or segments_y <= 0:
-                    self.statusbar.showMessage("Error: Number of segments must be positive integers")
-                    return
-
-            except ValueError:
-                self.statusbar.showMessage("Error: All parameters must be numeric values")
-                return
 
             self.logEventPlainTextEdit.clear()
             self.tabWidget.setEnabled(False)
@@ -212,16 +195,33 @@ class MainWindow(QMainWindow):
             self.startButton.setEnabled(False)
             self.stopButton.setEnabled(True)
 
+            x, y = sp.symbols('x y', real=True)
+            variables = [x, y]
+
+            # Целевая функция
+            # obj_func = 2 * x ** 2 + 3 * y ** 2 + 4 * x * y - 6 * x - 3 * y
+            obj_func = 2 * x ** 2 + 2 * x * y + 2 * y ** 2 - 4 * x - 6 * y
+
+            # Ограничения в форме g(x) <= 0
+            constraints = [
+                # x + y - 1,
+                # 2 * x + 3 * y - 4
+                x + 2 * y - 2
+            ]
+
             params = {
-                'x_range': (x_min, x_max),
-                'y_range': (y_min, y_max),
-                'num_segments_x': segments_x,
-                'num_segments_y': segments_y,
-                'function': self.function_manager_helper.get_current_function()['function']
+                'function': obj_func,  # Символьное выражение, например: 2*x**2 + 2*x*y + 2*y**2 - 4*x - 6*y
+                'constraints': constraints,  # Список sympy выражений, например: [x + 2*y - 2, -x, -y]
+                'variables': variables,  # Список sympy символов [x, y]
+                'max_iterations': 100
             }
 
+            # Создаем и запускаем оптимизатор
+            self.optimizer = SimplexMethod(params, self.log_emitter)
+            self.optimizer.run()
+
             self.openGLWidget.set_connect_optimization_points(False)
-            self.simplex_method = OldSimplexMethod(params, self.log_emitter)
+            self.simplex_method = SimplexMethod(params, self.log_emitter)
             self.simplex_method.finished_signal.connect(self.on_optimization_finished)
             self.simplex_method.update_signal.connect(self.openGLWidget.update_optimization_path)
 
