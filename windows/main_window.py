@@ -195,40 +195,32 @@ class MainWindow(QMainWindow):
             self.startButton.setEnabled(False)
             self.stopButton.setEnabled(True)
 
-            x, y = sp.symbols('x y', real=True)
-            variables = [x, y]
+            symbolic_result = self.function_manager_helper.to_symbolic_function(self.function_manager_helper.current_function_index)
+            # obj_func = 2 * x ** 2 + 2 * x * y + 2 * y ** 2 - 4 * x - 6 * y
 
-            # Целевая функция
-            # obj_func = 2 * x ** 2 + 3 * y ** 2 + 4 * x * y - 6 * x - 3 * y
-            obj_func = 2 * x ** 2 + 2 * x * y + 2 * y ** 2 - 4 * x - 6 * y
+            if symbolic_result['success']:
+                params = {
+                    'function': symbolic_result['objective'],  # sympy.Expr
+                    'constraints': symbolic_result['constraints'],  # List of sympy.Expr
+                    'variables': symbolic_result['variables'],  # List of sympy.Symbol
+                    'max_iterations': 100
+                }
+                # Создаем и запускаем оптимизатор
+                self.optimizer = SimplexMethod(params, self.log_emitter)
+                self.optimizer.run()
 
-            # Ограничения в форме g(x) <= 0
-            constraints = [
-                # x + y - 1,
-                # 2 * x + 3 * y - 4
-                x + 2 * y - 2
-            ]
+                self.openGLWidget.set_connect_optimization_points(False)
+                self.simplex_method = SimplexMethod(params, self.log_emitter)
+                self.simplex_method.finished_signal.connect(self.on_optimization_finished)
+                self.simplex_method.update_signal.connect(self.openGLWidget.update_optimization_path)
 
-            params = {
-                'function': obj_func,  # Символьное выражение, например: 2*x**2 + 2*x*y + 2*y**2 - 4*x - 6*y
-                'constraints': constraints,  # Список sympy выражений, например: [x + 2*y - 2, -x, -y]
-                'variables': variables,  # Список sympy символов [x, y]
-                'max_iterations': 100
-            }
+                self.optimization_thread = threading.Thread(target=self.simplex_method.run, daemon=True)
+                self.optimization_thread.start()
 
-            # Создаем и запускаем оптимизатор
-            self.optimizer = SimplexMethod(params, self.log_emitter)
-            self.optimizer.run()
+                self.statusbar.showMessage("Simplex method optimization started")
 
-            self.openGLWidget.set_connect_optimization_points(False)
-            self.simplex_method = SimplexMethod(params, self.log_emitter)
-            self.simplex_method.finished_signal.connect(self.on_optimization_finished)
-            self.simplex_method.update_signal.connect(self.openGLWidget.update_optimization_path)
-
-            self.optimization_thread = threading.Thread(target=self.simplex_method.run, daemon=True)
-            self.optimization_thread.start()
-
-            self.statusbar.showMessage("Simplex method optimization started")
+            else:
+                raise ValueError(symbolic_result['error'])
 
     @QtCore.pyqtSlot()
     def on_optimization_finished(self):

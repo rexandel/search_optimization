@@ -1,6 +1,6 @@
 {
   "functions": [
-        {
+    {
       "name": "My function",
       "formula": "f(x,y) = 2 * x^2 + 2 * x * y + 2 * y^2 - 4 * x - 6 * y",
       "python_formula": "lambda x, y: 2 * x**2 + 2 * x * y + 2 * y**2 - 4 * x - 6 * y",
@@ -18,90 +18,6 @@
           "python_formula": "lambda x, y: -y"
         }
       ]
-    },
-    {
-      "name": "Himmelblau Function",
-      "formula": "f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2",
-      "latex_formula": "$f(x, y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2$",
-      "python_formula": "lambda x, y: (x**2 + y - 11)**2 + (x + y**2 - 7)**2",
-      "constraints": []
-    },
-    {
-      "name": "Rastrigin Function",
-      "formula": "f(x,y) = 20 + x^2 + y^2 - 10*(cos(2*pi*x) + cos(2*pi*y))",
-      "latex_formula": "$f(x, y) = 20 + x^2 + y^2 - 10 \\cdot (\\cos(2\\pi x) + \\cos(2\\pi y))$",
-      "python_formula": "lambda x, y: 20 + x**2 + y**2 - 10*(np.cos(2*np.pi*x) + np.cos(2*np.pi*y))",
-      "constraints": []
-    },
-    {
-      "name": "Ackley Function",
-      "formula": "f(x,y) = -20 * exp(-0.2 * sqrt(0.5 * (x^2 + y^2))) - exp(0.5 * (cos(2*pi*x) + cos(2*pi*y))) + 20 + e",
-      "latex_formula": "$f(x, y) = -20 \\cdot \\exp\\left(-0.2 \\cdot \\sqrt{0.5 \\cdot (x^2 + y^2)}\\right) - \\exp\\left(0.5 \\cdot (\\cos(2\\pi x) + \\cos(2\\pi y))\\right) + 20 + e$",
-      "python_formula": "lambda x, y: -20 * np.exp(-0.2 * np.sqrt(0.5 * (x**2 + y**2))) - np.exp(0.5 * (np.cos(2*np.pi*x) + np.cos(2*np.pi*y))) + 20 + np.e",
-      "constraints": []
-    },
-    {
-      "name": "Sphere Function",
-      "formula": "f(x,y) = x^2 + y^2",
-      "latex_formula": "$f(x, y) = x^2 + y^2$",
-      "python_formula": "lambda x, y: x**2 + y**2",
-      "constraints": []
-    },
-    {
-      "name": "Rosenbrock Function",
-      "formula": "f(x,y) = (1 - x)^2 + 100*(y - x^2)^2",
-      "latex_formula": "$f(x, y) = (1 - x)^2 + 100 \\cdot (y - x^2)^2$",
-      "python_formula": "lambda x, y: (1 - x)**2 + 100 * (y - x**2)**2",
-      "constraints": []
-    },
-    {
-      "name": "Beale Function",
-      "formula": "f(x,y) = (1.5 - x + x*y)^2 + (2.25 - x + x*y^2)^2 + (2.625 - x + x*y^3)^2",
-      "latex_formula": "$f(x, y) = (1.5 - x + x \\cdot y)^2 + (2.25 - x + x \\cdot y^2)^2 + (2.625 - x + x \\cdot y^3)^2$",
-      "python_formula": "lambda x, y: (1.5 - x + x*y)**2 + (2.25 - x + x*y**2)**2 + (2.625 - x + x*y**3)**2",
-      "constraints": []
-    },
-    {
-      "name": "Goldstein-Price Function",
-      "formula": "f(x,y) = [1 + (x + y + 1)^2 * (19 - 14x + 3x^2 - 14y + 6xy + 3y^2)] * [30 + (2x - 3y)^2 * (18 - 32x + 12x^2 + 48y - 36xy + 27y^2)]",
-      "latex_formula": "$f(x,y) = [1 + (x + y + 1)^2 \\cdot (19 - 14x + 3x^2 - 14y + 6xy + 3y^2)] \\cdot [30 + (2x - 3y)^2 \\cdot (18 - 32x + 12x^2 + 48y - 36xy + 27y^2)]$",
-      "python_formula": "lambda x, y: (1 + (x + y + 1)**2 * (19 - 14*x + 3*x**2 - 14*y + 6*x*y + 3*y**2)) * (30 + (2*x - 3*y)**2 * (18 - 32*x + 12*x**2 + 48*y - 36*x*y + 27*y**2))",
-      "constraints": []
-    },
-    {
-      "name": "Booth Function",
-      "formula": "f(x,y) = (x + 2y - 7)^2 + (2x + y - 5)^2",
-      "latex_formula": "$f(x,y) = (x + 2y - 7)^2 + (2x + y - 5)^2$",
-      "python_formula": "lambda x, y: (x + 2*y - 7)**2 + (2*x + y - 5)**2",
-      "constraints": []
-    },
-    {
-      "name": "Bukin Function N.6",
-      "formula": "f(x,y) = 100 * sqrt(|y - 0.01x^2|) + 0.01*|x + 10|",
-      "latex_formula": "$f(x,y) = 100 \\cdot \\sqrt{|y - 0.01x^2|} + 0.01|x + 10|$",
-      "python_formula": "lambda x, y: 100 * np.sqrt(np.abs(y - 0.01*x**2)) + 0.01*np.abs(x + 10)",
-      "constraints": []
-    },
-    {
-      "name": "Matyas Function",
-      "formula": "f(x,y) = 0.26*(x^2 + y^2) - 0.48*x*y",
-      "latex_formula": "$f(x,y) = 0.26(x^2 + y^2) - 0.48xy$",
-      "python_formula": "lambda x, y: 0.26*(x**2 + y**2) - 0.48*x*y",
-      "constraints": []
-    },
-    {
-      "name": "Levi Function N.13",
-      "formula": "f(x,y) = sin^2(3*pi*x) + (x - 1)^2 * (1 + sin^2(3 * pi * y)) + (y - 1)^2 * (1 + sin^2(2*pi*y))",
-      "latex_formula": "$f(x,y) = \\sin^2(3\\pi x) + (x-1)^2(1 + \\sin^2(3\\pi y)) + (y-1)^2(1 + \\sin^2(2\\pi y))$",
-      "python_formula": "lambda x, y: np.sin(3*np.pi*x)**2 + (x-1)**2*(1 + np.sin(3*np.pi*y)**2) + (y-1)**2*(1 + np.sin(2*np.pi*y)**2)",
-      "constraints": []
-    },
-    {
-      "name": "Easom Function",
-      "formula": "f(x,y) = -cos(x)*cos(y)*exp(-((x - pi)^2 + (y - pi)^2))",
-      "latex_formula": "$f(x,y) = -\\cos(x)\\cos(y)\\exp(-((x-\\pi)^2 + (y-\\pi)^2))$",
-      "python_formula": "lambda x, y: -np.cos(x)*np.cos(y)*np.exp(-((x-np.pi)**2 + (y-np.pi)**2))",
-      "constraints": []
     }
   ]
 }

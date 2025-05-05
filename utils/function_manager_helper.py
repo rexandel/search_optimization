@@ -1,5 +1,8 @@
 import json
 import numpy as np
+import sympy as sp
+from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
+import re
 
 class FunctionManagerHelper:
     def __init__(self, json_file_path=None):
@@ -98,3 +101,108 @@ class FunctionManagerHelper:
         if len(self.functions) > 0:
             for func in self.functions:
                 combo_box.addItem(func['name'])
+
+    def to_symbolic_function(self, func_index):
+        """
+        Convert a function and its constraints at the given index to symbolic SymPy expressions
+        by parsing the python_formula (lambda expression). Excludes non-negativity constraints
+        (x >= 0 and y >= 0, represented as -x <= 0 and -y <= 0).
+
+        Args:
+            func_index (int): Index of the function in self.functions.
+
+        Returns:
+            dict: Dictionary containing:
+                - 'variables': List of SymPy symbols [x, y].
+                - 'objective': SymPy expression for the objective function.
+                - 'constraints': List of SymPy expressions for constraints (excluding x >= 0, y >= 0).
+                - 'success': Boolean indicating if conversion was successful.
+                - 'error': Error message if conversion failed (None if successful).
+        """
+        if not 0 <= func_index < len(self.functions):
+            return {
+                'variables': None,
+                'objective': None,
+                'constraints': None,
+                'success': False,
+                'error': f"Invalid function index: {func_index}"
+            }
+
+        func_data = self.functions[func_index]
+        x, y = sp.symbols('x y', real=True)
+        variables = [x, y]
+
+        # Define parsing transformations for robust formula parsing
+        transformations = (standard_transformations + (implicit_multiplication_application,))
+
+        try:
+            # Extract expression from python_formula (e.g., 'lambda x, y: expr' -> 'expr')
+            python_formula = func_data['python_formula'].strip()
+            if not python_formula:
+                raise ValueError("Empty python_formula string")
+
+            # Match 'lambda x, y: expression'
+            match = re.match(r'^\s*lambda\s+x\s*,\s*y\s*:\s*(.+)$', python_formula)
+            if not match:
+                raise ValueError("Invalid lambda expression format")
+
+            expr_str = match.group(1).strip()
+            if not expr_str:
+                raise ValueError("Empty expression in lambda")
+
+            # Parse the objective function expression
+            objective = parse_expr(
+                expr_str,
+                local_dict={'x': x, 'y': y},
+                transformations=transformations
+            )
+
+            # Parse constraints, excluding x >= 0 and y >= 0
+            constraints = []
+            for constraint in func_data.get('constraints', []):
+                constraint_formula = constraint.get('python_formula', '').strip()
+                if not constraint_formula:
+                    print(f"Warning: Empty constraint python_formula for function {func_data['name']}")
+                    continue
+
+                try:
+                    # Extract expression from constraint python_formula
+                    match = re.match(r'^\s*lambda\s+x\s*,\s*y\s*:\s*(.+)$', constraint_formula)
+                    if not match:
+                        raise ValueError("Invalid constraint lambda expression format")
+
+                    constraint_expr_str = match.group(1).strip()
+                    if not constraint_expr_str:
+                        raise ValueError("Empty expression in constraint lambda")
+
+                    constraint_expr = parse_expr(
+                        constraint_expr_str,
+                        local_dict={'x': x, 'y': y},
+                        transformations=transformations
+                    )
+
+                    # Skip non-negativity constraints (x >= 0, y >= 0)
+                    if constraint_expr == -x or constraint_expr == -y:
+                        continue
+
+                    constraints.append(constraint_expr)
+                except Exception as e:
+                    print(f"Error parsing constraint python_formula '{constraint_formula}': {str(e)}")
+                    continue
+
+            return {
+                'variables': variables,
+                'objective': objective,
+                'constraints': constraints,
+                'success': True,
+                'error': None
+            }
+
+        except Exception as e:
+            return {
+                'variables': None,
+                'objective': None,
+                'constraints': None,
+                'success': False,
+                'error': f"Error parsing function '{func_data['name']}': {str(e)}"
+            }
