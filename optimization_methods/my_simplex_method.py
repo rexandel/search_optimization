@@ -47,7 +47,6 @@ class MySimplexMethod(QObject):
         self.log_emitter.log_signal.emit("🔹 KKT optimization started...")
 
         try:
-            # Log all constraints at the beginning
             if self.constraints:
                 constraint_msg = ["### Optimization Constraints ###"]
                 for i, constr in enumerate(self.constraints, 1):
@@ -79,8 +78,6 @@ class MySimplexMethod(QObject):
         finally:
             self._is_running = False
             self.finished_signal.emit()
-
-    # ... (other methods like _build_kkt_system, _solve_simplex, etc. remain unchanged as provided)
 
     def stop(self):
         self._is_running = False

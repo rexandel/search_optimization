@@ -29,7 +29,6 @@ class LibrarySimplexMethod(QObject):
             start_time = time.time()
             self.log_emitter.log_signal.emit("\n📊 Setting up optimization...")
 
-            # Log constraints
             if self.constraints:
                 constraint_msg = ["### Optimization Constraints ###"]
                 for i, constr in enumerate(self.constraints, 1):
@@ -38,29 +37,23 @@ class LibrarySimplexMethod(QObject):
             else:
                 self.log_emitter.log_signal.emit("### Optimization Constraints ###\nNo explicit constraints provided (assuming x >= 0, y >= 0)")
 
-            # Define the objective function for minimize
             def objective(vars):
                 return self.function(vars[0], vars[1])
 
-            # Prepare constraints for minimize
             scipy_constraints = []
             for constr in self.constraints:
-                # Constraints are in the form g(x,y) <= 0
                 def constraint_func(vars, c=constr['function']):
-                    return -c(vars[0], vars[1])  # Convert to -g(x,y) >= 0
+                    return -c(vars[0], vars[1])
 
                 scipy_constraints.append({
                     'type': 'ineq',
                     'fun': constraint_func
                 })
 
-            # Define bounds for non-negativity (x >= 0, y >= 0)
             bounds = [(0, None), (0, None)]
 
-            # Initial guess
             initial_guess = np.array([0.0, 0.0])
 
-            # Perform optimization
             self.log_emitter.log_signal.emit("\n🔍 Running optimization...")
             result = minimize(
                 objective,
@@ -71,7 +64,6 @@ class LibrarySimplexMethod(QObject):
                 options={'disp': True, 'maxiter': 1000}
             )
 
-            # Log detailed results
             end_time = time.time()
             total_time = end_time - start_time
 
@@ -79,7 +71,6 @@ class LibrarySimplexMethod(QObject):
                 self.all_points.append(np.array([[result.x[0], result.x[1]]]))
                 self.update_signal.emit(np.concatenate(self.all_points), False)
 
-                # Evaluate constraints at the solution
                 constraint_values = []
                 for i, constr in enumerate(self.constraints):
                     value = constr['function'](result.x[0], result.x[1])

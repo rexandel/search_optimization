@@ -103,22 +103,6 @@ class FunctionManagerHelper:
                 combo_box.addItem(func['name'])
 
     def to_symbolic_function(self, func_index):
-        """
-        Convert a function and its constraints at the given index to symbolic SymPy expressions
-        by parsing the python_formula (lambda expression). Excludes non-negativity constraints
-        (x >= 0 and y >= 0, represented as -x <= 0 and -y <= 0).
-
-        Args:
-            func_index (int): Index of the function in self.functions.
-
-        Returns:
-            dict: Dictionary containing:
-                - 'variables': List of SymPy symbols [x, y].
-                - 'objective': SymPy expression for the objective function.
-                - 'constraints': List of SymPy expressions for constraints (excluding x >= 0, y >= 0).
-                - 'success': Boolean indicating if conversion was successful.
-                - 'error': Error message if conversion failed (None if successful).
-        """
         if not 0 <= func_index < len(self.functions):
             return {
                 'variables': None,
@@ -132,11 +116,9 @@ class FunctionManagerHelper:
         x, y = sp.symbols('x y', real=True)
         variables = [x, y]
 
-        # Define parsing transformations for robust formula parsing
         transformations = (standard_transformations + (implicit_multiplication_application,))
 
         try:
-            # Parse objective function from python_formula
             python_formula = func_data['python_formula'].strip()
             if not python_formula:
                 raise ValueError("Empty python_formula string")
@@ -155,7 +137,6 @@ class FunctionManagerHelper:
                 transformations=transformations
             )
 
-            # Parse constraints from formula field
             constraints = []
             for constraint in func_data.get('constraints', []):
                 constraint_formula = constraint.get('formula', '').strip()
@@ -164,7 +145,6 @@ class FunctionManagerHelper:
                     continue
 
                 try:
-                    # Split inequality (e.g., "x + 2 * y <= 2")
                     if '<=' in constraint_formula:
                         lhs, rhs = constraint_formula.split('<=', 1)
                         inequality_type = '<='
@@ -179,7 +159,6 @@ class FunctionManagerHelper:
                     if not lhs or not rhs:
                         raise ValueError("Invalid constraint formula: empty LHS or RHS")
 
-                    # Parse LHS and RHS
                     lhs_expr = parse_expr(
                         lhs,
                         local_dict={'x': x, 'y': y},
@@ -191,13 +170,11 @@ class FunctionManagerHelper:
                         transformations=transformations
                     )
 
-                    # Convert to g(x, y) <= 0
                     if inequality_type == '<=':
-                        constraint_expr = lhs_expr - rhs_expr  # e.g., x + 2*y - 2
-                    else:  # '>='
-                        constraint_expr = rhs_expr - lhs_expr  # e.g., x >= 0 → 0 - (-x) = x
+                        constraint_expr = lhs_expr - rhs_expr
+                    else:
+                        constraint_expr = rhs_expr - lhs_expr
 
-                    # Skip non-negativity constraints (x >= 0, y >= 0)
                     if constraint_expr == -x or constraint_expr == -y:
                         continue
 

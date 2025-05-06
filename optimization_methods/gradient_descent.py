@@ -61,7 +61,7 @@ class GradientDescent(QObject):
                 )
                 self.log_emitter.log_signal.emit(message)
 
-                if grad_norm < self.firstEps:  # First stop condition
+                if grad_norm < self.firstEps:
                     self.log_emitter.log_signal.emit(
                         f"✅ Stopping: Gradient norm {grad_norm:.6f} < {self.firstEps}"
                     )
@@ -74,7 +74,7 @@ class GradientDescent(QObject):
                 if func_diff < 0:
                     step_diff = np.linalg.norm(nx - x)
 
-                    if step_diff < self.secondEps and abs(func_diff) < self.secondEps:  # Second stop condition
+                    if step_diff < self.secondEps and abs(func_diff) < self.secondEps:
                         self.log_emitter.log_signal.emit("✅ Stopping: Small step and function change")
                         points.append(nx.copy())
                         x = nx
