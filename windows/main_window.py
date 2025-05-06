@@ -3,6 +3,8 @@ from PyQt5 import uic, QtCore
 from PyQt5.QtCore import Qt
 
 from windows import FunctionManagerWindow
+from windows.work_log_window import WorkLogWindow
+
 from optimization_methods import GradientDescent, LibrarySimplexMethod, MySimplexMethod
 from utils import LogEmitter, FunctionManagerHelper
 
@@ -44,9 +46,16 @@ class MainWindow(QMainWindow):
         self.stopButton.clicked.connect(self.on_stop_button_clicked)
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
         self.clearButton.clicked.connect(self.clear_all_line_edits)
+        self.viewInSeparateWindowButton.clicked.connect(self.open_work_log_in_separate_window)
         # self.viewButton.clicked.connect(self.view_function_graph)
 
         self.setFocusPolicy(Qt.StrongFocus)
+
+    def open_work_log_in_separate_window(self):
+        log_text = self.logEventPlainTextEdit.toPlainText()
+
+        self.work_log_window = WorkLogWindow(log_text)
+        self.work_log_window.show()
 
     def clear_all_line_edits(self):
         for line_edit in self.current_tab_line_edits:

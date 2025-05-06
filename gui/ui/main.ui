@@ -636,7 +636,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="viewInSepateWindowButton">
+             <widget class="QPushButton" name="viewInSeparateWindowButton">
               <property name="font">
                <font>
                 <pointsize>10</pointsize>
