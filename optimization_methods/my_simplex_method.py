@@ -6,7 +6,8 @@ from scipy.optimize import minimize
 from PyQt5.QtCore import QObject, pyqtSignal
 import numpy as np
 
-class SimplexMethod(QObject):
+
+class MySimplexMethod(QObject):
     finished_signal = pyqtSignal()
     update_signal = pyqtSignal(np.ndarray)
 
