@@ -195,8 +195,9 @@ class MainWindow(QMainWindow):
             self.gradient_descent.update_signal.connect(self.openGLWidget.update_optimization_path)
             self.statusbar.showMessage("Optimization started")
         elif current_index == 1:
+            self.logEventPlainTextEdit.clear()
+
             if self.myMethodRadioButton.isChecked():
-                self.logEventPlainTextEdit.clear()
                 self.tabWidget.setEnabled(False)
                 self.selectFunctionComboBox.setEnabled(False)
                 self.startButton.setEnabled(False)
@@ -228,7 +229,6 @@ class MainWindow(QMainWindow):
                     raise ValueError(symbolic_result['error'])
 
             elif self.libraryMethodRadioButton.isChecked():
-                self.logEventPlainTextEdit.clear()
                 self.tabWidget.setEnabled(False)
                 self.selectFunctionComboBox.setEnabled(False)
                 self.startButton.setEnabled(False)
