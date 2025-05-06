@@ -1,3 +1,4 @@
+# Import required libraries
 import sympy as sp
 from prettytable import PrettyTable
 from fractions import Fraction
@@ -8,17 +9,42 @@ import numpy as np
 
 
 class MySimplexMethod(QObject):
+    """
+    Implementation of the Simplex Method for solving linear programming problems
+    with KKT conditions and artificial variables approach.
+
+    This class handles:
+    - Construction of KKT system
+    - Adding artificial variables
+    - Building and solving simplex tables
+    - Verification with scipy.optimize
+    """
+
+    # PyQt signals for communication with GUI
     finished_signal = pyqtSignal()
     update_signal = pyqtSignal(np.ndarray)
 
     def __init__(self, params_dict, log_emitter):
+        """
+        Initialize the Simplex Method solver with given parameters.
+
+        Args:
+            params_dict (dict): Dictionary containing optimization parameters:
+                - 'function': Objective function (sympy Expr)
+                - 'constraints': List of constraints (sympy Expr)
+                - 'variables': List of variables (sympy Symbols)
+                - 'max_iterations': Maximum number of iterations (optional)
+            log_emitter: Object for emitting log messages
+        """
         super().__init__()
+        # Initialize parameters from dictionary
         self.function = params_dict['function']
         self.constraints = params_dict['constraints']
         self.variables = params_dict['variables']
         self.max_iterations = params_dict.get('max_iterations', 100)
-        self.points = []
+        self.points = []  # Stores [x, y] coordinates during optimization
 
+        # Validate input parameters
         if not isinstance(self.function, sp.Expr):
             raise ValueError("Function must be a sympy expression")
         if not all(isinstance(c, sp.Expr) for c in self.constraints):
@@ -26,51 +52,55 @@ class MySimplexMethod(QObject):
         if not all(isinstance(v, sp.Symbol) for v in self.variables):
             raise ValueError("Variables must be sympy symbols")
 
+        # Setup logging and execution control
         self.log_emitter = log_emitter
         self._is_running = False
-        self.initial_delay = 0.05
-        self.min_delay = 0.001
+        self.initial_delay = 0.05  # Initial delay between iterations (for visualization)
+        self.min_delay = 0.001  # Minimum delay between iterations
 
-        # Результаты оптимизации
-        self.kkt_system = None
-        self.artificial_system = None
-        self.simplex_data = None
-        self.solution_results = None
-        self.scipy_result = None
+        # Optimization results storage
+        self.kkt_system = None  # KKT system components
+        self.artificial_system = None  # Artificial variables system
+        self.simplex_data = None  # Simplex table data
+        self.solution_results = None  # Final solution results
+        self.scipy_result = None  # Scipy verification results
 
-        # Текущее состояние
-        self.current_iteration = 0
-        self.current_solution = None
+        # Current state tracking
+        self.current_iteration = 0  # Current iteration count
+        self.current_solution = None  # Current solution during iterations
 
     def run(self):
+        """Main execution method for the optimization process."""
         self._is_running = True
         self.log_emitter.log_signal.emit("🔹 KKT optimization started...")
 
         try:
+            # Log the optimization constraints
             if self.constraints:
                 constraint_msg = ["### Optimization Constraints ###"]
                 for i, constr in enumerate(self.constraints, 1):
                     constraint_msg.append(f"g{i}: {sp.pretty(constr)} <= 0")
                 self.log_emitter.log_signal.emit("\n".join(constraint_msg))
             else:
-                self.log_emitter.log_signal.emit("### Optimization Constraints ###\nNo explicit constraints provided (assuming x >= 0, y >= 0)")
+                self.log_emitter.log_signal.emit(
+                    "### Optimization Constraints ###\nNo explicit constraints provided (assuming x >= 0, y >= 0)")
 
-            # Шаг 1: Построение системы KKT
+            # Step 1: Build the KKT system
             self._build_kkt_system()
 
-            # Шаг 2: Добавление искусственных переменных
+            # Step 2: Add artificial variables
             self._add_artificial_variables()
 
-            # Шаг 3: Построение симплекс-таблицы
+            # Step 3: Build the simplex table
             self._build_simplex_table()
 
-            # Шаг 4: Решение симплекс-методом
+            # Step 4: Solve using simplex method
             self._solve_simplex()
 
-            # Шаг 5: Проверка решения через scipy
+            # Step 5: Verify solution with scipy
             self._verify_with_scipy()
 
-            # Завершение
+            # Completion message
             self.log_emitter.log_signal.emit("🎉 KKT optimization finished successfully!")
 
         except Exception as e:
@@ -80,35 +110,46 @@ class MySimplexMethod(QObject):
             self.finished_signal.emit()
 
     def stop(self):
+        """Stop the optimization process."""
         self._is_running = False
         self.log_emitter.log_signal.emit("⏹ KKT optimization stopped by user")
 
     def _build_kkt_system(self):
+        """Construct the Karush-Kuhn-Tucker (KKT) system for the optimization problem."""
         self.log_emitter.log_signal.emit("🔧 Building KKT system...")
 
         n_constraints = len(self.constraints)
+        # Create Lagrange multipliers (λ), non-negativity variables (v), and slackness variables (w)
         lambdas = [sp.symbols(f'lambda{i + 1}', real=True) for i in range(n_constraints)]
         vs = [sp.symbols(f'v{i + 1}', real=True) for i in range(len(self.variables))]
         ws = [sp.symbols(f'w{i + 1}', real=True) for i in range(n_constraints)]
 
+        # Construct the Lagrangian function
         L = self.function + sum(lambdas[i] * self.constraints[i] for i in range(n_constraints))
+
+        # Derivatives of Lagrangian
         dL_dx = [sp.diff(L, var) for var in self.variables]
         dL_dlambda = self.constraints
 
+        # KKT conditions
         kkt_conditions = []
         for i in range(len(self.variables)):
             kkt_conditions.append(dL_dx[i] - vs[i])
         for i in range(n_constraints):
             kkt_conditions.append(dL_dlambda[i] + ws[i])
 
+        # Feasibility conditions
         primal_feasibility = [constr <= 0 for constr in self.constraints] + [var >= 0 for var in self.variables]
         dual_feasibility = [lam >= 0 for lam in lambdas] + [v >= 0 for v in vs] + [w >= 0 for w in ws]
 
+        # Complementary slackness conditions
         complementary_slackness = [(self.variables[i], vs[i]) for i in range(len(self.variables))]
         complementary_slackness += [(lambdas[i], ws[i]) for i in range(n_constraints)]
 
+        # Collect all variables
         all_variables = self.variables + lambdas + vs + ws
 
+        # Store the complete KKT system
         self.kkt_system = {
             'lagrangian': L,
             'kkt_conditions': kkt_conditions,
@@ -165,32 +206,36 @@ class MySimplexMethod(QObject):
         self.log_emitter.log_signal.emit("\n".join(message))
 
     def _add_artificial_variables(self):
+        """Add artificial variables to handle negative free terms in the KKT system."""
         self.log_emitter.log_signal.emit("🔧 Adding artificial variables...")
 
         variables = self.kkt_system['all_variables']
         vs = self.kkt_system['vs']
         ws = self.kkt_system['ws']
-        z_vars = []
+        z_vars = []  # Artificial variables
         modified_equations = []
-        z_expressions = {}
-        artificial_info = []
+        z_expressions = {}  # Expressions for artificial variables
+        artificial_info = []  # Information about each equation modification
 
         for i, eq in enumerate(self.kkt_system['kkt_conditions']):
             left_part = eq
             right_part = 0
             free_term = left_part.as_coeff_add(*variables)[0]
 
+            # Determine which auxiliary variable we're working with (v or w)
             if i < len(vs):
                 dop_var = vs[i]
                 dop_var_name = f'v{i + 1}'
-                dop_var_sign = -1
+                dop_var_sign = -1  # v variables have negative sign in equations
             else:
                 dop_var = ws[i - len(vs)]
                 dop_var_name = f'w{i - len(vs) + 1}'
-                dop_var_sign = 1
+                dop_var_sign = 1  # w variables have positive sign in equations
 
+            # Check if we need an artificial variable for this equation
             need_artificial = (dop_var_sign < 0 and free_term < 0) or (dop_var_sign > 0 and free_term > 0)
 
+            # Store equation information
             eq_info = {
                 'equation_index': i + 1,
                 'equation': eq,
@@ -200,10 +245,12 @@ class MySimplexMethod(QObject):
                 'need_artificial': need_artificial
             }
 
+            # Move free term to right side
             right_part_final = -free_term
             modified_eq = left_part - free_term
 
             if need_artificial:
+                # Add artificial variable z
                 z_var = sp.symbols(f'z{i + 1}', real=True)
                 z_vars.append(z_var)
                 modified_eq = modified_eq + z_var
@@ -218,10 +265,11 @@ class MySimplexMethod(QObject):
             artificial_info.append(eq_info)
             modified_equations.append((modified_eq, right_part_final))
 
+        # Store the artificial system information
         self.artificial_system = {
             'z_vars': z_vars,
             'z_expressions': z_expressions,
-            'F_z': sum(z_vars) if z_vars else None,
+            'F_z': sum(z_vars) if z_vars else None,  # Auxiliary objective function
             'F_z_expanded': sum(z_expressions[z] for z in z_vars) if z_vars else None,
             'modified_equations': modified_equations,
             'artificial_info': artificial_info
@@ -230,6 +278,7 @@ class MySimplexMethod(QObject):
         self._log_artificial_variables()
 
     def _log_artificial_variables(self):
+        """Log information about artificial variables and modified equations."""
         msg = ["### Artificial Variables ###"]
 
         for eq_info in self.artificial_system['artificial_info']:
@@ -268,8 +317,10 @@ class MySimplexMethod(QObject):
         self.log_emitter.log_signal.emit("\n".join(msg))
 
     def _build_simplex_table(self):
+        """Build the initial simplex table from the modified KKT system."""
         self.log_emitter.log_signal.emit("🔧 Building simplex table...")
 
+        # Determine the order of variables in the table
         variables_order = (
                 self.kkt_system['variables'] +
                 self.kkt_system['lambdas'] +
@@ -278,15 +329,19 @@ class MySimplexMethod(QObject):
                 self.artificial_system['z_vars']
         )
 
+        # Create table headers
         headers = ['Basis', 'RHS'] + [str(var) for var in variables_order]
         table = PrettyTable(headers)
         table.float_format = ".2f"
 
+        # Process each modified equation to create table rows
         rows_data = []
         for eq, rhs in self.artificial_system['modified_equations']:
+            # Get coefficients for each variable
             coeffs = [eq.coeff(var) for var in variables_order]
             basis_var = None
 
+            # Determine basis variable (either z or w)
             for z_var in self.artificial_system['z_vars']:
                 if eq.coeff(z_var) == 1:
                     basis_var = z_var
@@ -298,6 +353,7 @@ class MySimplexMethod(QObject):
                         basis_var = w_var
                         break
 
+            # Add row to the table
             row = [str(basis_var), float(rhs)] + [float(coef) for coef in coeffs]
             table.add_row(row)
             rows_data.append({
@@ -306,6 +362,7 @@ class MySimplexMethod(QObject):
                 'coeffs': coeffs
             })
 
+        # Add the objective function row if we have artificial variables
         f_row_data = None
         if self.artificial_system['F_z_expanded'] is not None:
             f_coeffs = [-self.artificial_system['F_z_expanded'].coeff(var) for var in variables_order]
@@ -317,6 +374,7 @@ class MySimplexMethod(QObject):
                 'coeffs': f_coeffs
             }
 
+        # Store all simplex table data
         self.simplex_data = {
             'table': table,
             'rows_data': rows_data,
@@ -328,23 +386,28 @@ class MySimplexMethod(QObject):
         self.log_emitter.log_signal.emit("### Initial Simplex Table ###\n" + str(table))
 
     def _solve_simplex(self):
+        """Solve the optimization problem using the simplex method."""
         self.log_emitter.log_signal.emit("🔧 Solving with simplex method...")
 
+        # Get necessary variables from stored systems
         variables_order = self.simplex_data['variables_order']
         z_vars = self.artificial_system['z_vars']
         vs = self.kkt_system['vs']
         ws = self.kkt_system['ws']
         complementary_slackness = self.kkt_system['complementary_slackness']
 
+        # Initialize working variables
         simplex_table = self.simplex_data['table']
         table_rows = simplex_table._rows
         headers = self.simplex_data['headers']
 
+        # Reset iteration counters and solution storage
         self.current_iteration = 0
-        basis_history = set()
+        basis_history = set()  # Track visited bases to detect cycles
         self.solution_results = {'iterations': []}
-        self.points = []  # Initialize points list for [x, y] coordinates
+        self.points = []  # Clear points list for new optimization
 
+        # Main simplex iteration loop
         while self.current_iteration < self.max_iterations and self._is_running:
             self.current_iteration += 1
             iteration_info = {
@@ -354,17 +417,18 @@ class MySimplexMethod(QObject):
                 'objective_value': None
             }
 
-            # Convert rows to Fraction for precision
+            # Convert all table values to Fraction for exact arithmetic
             frac_rows = []
             for row in table_rows:
                 new_row = [row[0]] + [Fraction(str(val)).limit_denominator() for val in row[1:]]
                 frac_rows.append(new_row)
 
-            # Extract current basis
+            # Extract current basis variables
             current_basis = tuple(row[0] for row in frac_rows if row[0] != 'F')
             basis_str = str(current_basis)
             iteration_info['current_basis'] = current_basis
 
+            # Check for cycling (revisiting the same basis)
             if basis_str in basis_history:
                 iteration_info['cycle_detected'] = True
                 self.solution_results['iterations'].append(iteration_info)
@@ -372,13 +436,13 @@ class MySimplexMethod(QObject):
                                                              complementary_slackness)
                 self.solution_results['solution'] = final_solution
                 self.log_emitter.log_signal.emit("🔄 Cycle detected in simplex method!")
-                # Emit final points
+                # Emit final points for visualization
                 self.update_signal.emit(np.array(self.points, dtype=float))
                 break
 
             basis_history.add(basis_str)
 
-            # Compute current solution
+            # Compute current solution from the basis
             solution = {}
             for row in frac_rows:
                 if row[0] != 'F':
@@ -386,6 +450,7 @@ class MySimplexMethod(QObject):
                     free_term = float(row[1])
                     solution[basis_var] = free_term
 
+            # Set non-basis variables to zero
             for var in variables_order:
                 if str(var) not in solution:
                     solution[str(var)] = 0.0
@@ -393,23 +458,25 @@ class MySimplexMethod(QObject):
             self.current_solution = solution
             iteration_info['current_solution'] = solution
 
-            # Store [x, y] coordinates and compute objective value
+            # Calculate objective value and store points for visualization
             obj_value = None
             if 'x' in solution and 'y' in solution:
                 try:
                     x, y = solution['x'], solution['y']
-                    self.points.append([x, y])  # Append [x, y] to points
+                    self.points.append([x, y])  # Store current point
+
+                    # Calculate objective value at current point
                     obj_value = float(sp.lambdify(self.variables, self.function)(x, y))
                     iteration_info['objective_value'] = obj_value
 
-                    # Emit points as a 2D numpy array for visualization
+                    # Emit points for visualization
                     points_array = np.array(self.points, dtype=float)  # Shape: (n, 2)
                     self.update_signal.emit(points_array)
 
                 except Exception as e:
                     self.log_emitter.log_signal.emit(f"⚠ Error calculating objective: {str(e)}")
 
-            # Log simplex table and objective value before pivot operations
+            # Log current simplex table and objective value
             table_msg = [
                 f"\n### Simplex Table at Iteration {self.current_iteration} ###",
                 str(simplex_table)
@@ -420,7 +487,7 @@ class MySimplexMethod(QObject):
                 table_msg.append("Objective Function Value: Not computed (x or y missing)")
             self.log_emitter.log_signal.emit("\n".join(table_msg))
 
-            # Check optimality
+            # Check optimality conditions (all coefficients in F-row <= 0)
             f_row = [row for row in frac_rows if row[0] == 'F'][0]
             f_coeffs = {headers[i]: coef for i, coef in enumerate(f_row[2:], 2)}
             iteration_info['f_coeffs'] = {str(var): float(f_coeffs[str(var)]) for var in variables_order}
@@ -434,16 +501,17 @@ class MySimplexMethod(QObject):
                                                              complementary_slackness)
                 self.solution_results['solution'] = final_solution
                 self.log_emitter.log_signal.emit("✅ Optimal solution found!")
-                # Emit final points
+                # Emit final points for visualization
                 self.update_signal.emit(np.array(self.points, dtype=float))
                 break
 
-            # Select pivot column
+            # Select pivot column (variable to enter the basis)
             max_coeff = float('-inf')
             pivot_col_idx = None
             pivot_col_var = None
             basis_vars = {row[0] for row in frac_rows if row[0] != 'F'}
 
+            # Evaluate all candidates for pivot column
             pivot_col_candidates = []
             for i, var in enumerate(variables_order, 2):
                 coef = float(f_coeffs[str(var)])
@@ -455,8 +523,11 @@ class MySimplexMethod(QObject):
                     'disqualified_reason': None
                 }
 
+                # Check if this variable is a candidate for entering basis
                 if coef > max_coeff and not is_basis:
                     can_use = True
+
+                    # Check complementary slackness conditions
                     for var1, var2 in complementary_slackness:
                         if var == var1:
                             for row in frac_rows:
@@ -485,11 +556,11 @@ class MySimplexMethod(QObject):
                 iteration_info['no_pivot_col'] = True
                 self.solution_results['iterations'].append(iteration_info)
                 self.log_emitter.log_signal.emit("❌ No suitable pivot column found!")
-                # Emit final points
+                # Emit final points for visualization
                 self.update_signal.emit(np.array(self.points, dtype=float))
                 break
 
-            # Select pivot row
+            # Select pivot row (variable to leave the basis)
             min_ratio = float('inf')
             pivot_row_idx = None
             pivot_row_var = None
@@ -536,23 +607,26 @@ class MySimplexMethod(QObject):
                 iteration_info['unbounded'] = True
                 self.solution_results['iterations'].append(iteration_info)
                 self.log_emitter.log_signal.emit("❌ Problem is unbounded!")
-                # Emit final points
+                # Emit final points for visualization
                 self.update_signal.emit(np.array(self.points, dtype=float))
                 break
 
-            # Pivot element
+            # Get pivot element value
             pivot_element = frac_rows[pivot_row_idx][pivot_col_idx]
             iteration_info['pivot_element'] = float(pivot_element)
 
-            # Create new table
+            # Create new simplex table after pivot operation
             new_table = PrettyTable(headers)
             new_table.float_format = ".2f"
             new_rows = []
 
+            # Perform Gaussian elimination for the pivot operation
             for i, row in enumerate(frac_rows):
                 if i == pivot_row_idx:
+                    # Normalize pivot row
                     new_row = [row[0]] + [val / pivot_element for val in row[1:]]
                 else:
+                    # Eliminate pivot column from other rows
                     factor = row[pivot_col_idx]
                     pivot_row = [val / pivot_element for val in frac_rows[pivot_row_idx][1:]]
                     new_row = [row[0]] + [
@@ -561,7 +635,7 @@ class MySimplexMethod(QObject):
                     ]
                 new_rows.append(new_row)
 
-            # Update basis variable
+            # Update basis variable in pivot row
             new_rows[pivot_row_idx][0] = str(pivot_col_var)
 
             # Convert Fraction to float for display
@@ -571,21 +645,25 @@ class MySimplexMethod(QObject):
                 new_table.add_row(display_row)
                 table_rows.append(display_row)
 
+            # Update working variables for next iteration
             frac_rows = new_rows
             simplex_table = new_table
 
+            # Store iteration information and log details
             self.solution_results['iterations'].append(iteration_info)
             self._log_simplex_iteration(iteration_info)
 
+        # Check if we reached maximum iterations without convergence
         if self.current_iteration >= self.max_iterations:
             final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
                                                          complementary_slackness)
             self.solution_results['solution'] = final_solution
             self.log_emitter.log_signal.emit(f"⚠ Reached maximum iterations ({self.max_iterations})")
-            # Emit final points
+            # Emit final points for visualization
             self.update_signal.emit(np.array(self.points, dtype=float))
 
     def _log_simplex_iteration(self, iteration_info):
+        """Log detailed information about a simplex iteration."""
         msg = [
             f"\n### Iteration {iteration_info['iteration']} ###",
             str(iteration_info['table']),
@@ -593,13 +671,16 @@ class MySimplexMethod(QObject):
             "### F-row coefficients ###"
         ]
 
+        # Log all coefficients in the objective row
         for var, coef in iteration_info['f_coeffs'].items():
             msg.append(f"{var}: {coef:.6f}")
 
+        # Log pivot selection information
         msg.append("\n### Pivot Selection ###")
         msg.append(
             f"Leading column: {iteration_info['pivot_col']['var']} (coef: {iteration_info['pivot_col']['coef']:.6f})")
 
+        # Log ratio test information
         msg.append("\n### Ratios ###")
         for ratio in iteration_info['ratio_data']:
             if 'skipped' in ratio:
@@ -608,24 +689,27 @@ class MySimplexMethod(QObject):
                 msg.append(
                     f"Row {ratio['row_var']}: {ratio['free_term']:.6f} / {ratio['pivot_col_val']:.6f} = {ratio['ratio']:.6f}")
 
+        # Log selected pivot information
         msg.append(
             f"\nLeading row: {iteration_info['pivot_row']['var']} (ratio: {iteration_info['pivot_row']['ratio']:.6f})")
         msg.append(f"Pivot element: {iteration_info['pivot_element']:.6f}")
 
+        # Log objective value if available
         if 'objective_value' in iteration_info:
             msg.append(f"\nCurrent objective value: {iteration_info['objective_value']:.6f}")
 
         self.log_emitter.log_signal.emit("\n".join(msg))
 
     def _handle_final_solution(self, frac_rows, variables_order, z_vars, vs, ws, complementary_slackness):
+        """Analyze and interpret the final simplex solution."""
         f_row = [row for row in frac_rows if row[0] == 'F'][0]
         f_value = float(f_row[1])
 
-        # Проверяем искусственные переменные
+        # Check if any artificial variables remain in the basis with positive values
         artificial_in_basis = any(
             row[0] in [str(z) for z in z_vars] and float(row[1]) > 0 for row in frac_rows if row[0] != 'F')
 
-        # Проверяем дополнительные переменные
+        # Check additional variables (v and w) in basis with positive values
         additional_vars = [str(v) for v in vs] + [str(w) for w in ws]
         additional_in_basis = [
             (row[0], float(row[1]))
@@ -633,7 +717,7 @@ class MySimplexMethod(QObject):
             if row[0] != 'F' and row[0] in additional_vars and float(row[1]) > 0
         ]
 
-        # Формируем решение
+        # Extract solution values
         solution = {}
         for row in frac_rows:
             if row[0] != 'F':
@@ -645,11 +729,12 @@ class MySimplexMethod(QObject):
             if str(var) not in solution:
                 solution[str(var)] = 0.0
 
-        # Анализ дополнительных переменных
+        # Analyze implications of additional variables in basis
         additional_analysis = []
         for var, value in additional_in_basis:
             analysis = {'var': var, 'value': value, 'implications': []}
 
+            # Check complementary slackness conditions
             for var1, var2 in complementary_slackness:
                 if str(var1) == var:
                     analysis['implications'].append({
@@ -664,6 +749,7 @@ class MySimplexMethod(QObject):
 
             additional_analysis.append(analysis)
 
+        # Prepare final solution result
         result = {
             'f_value': f_value,
             'artificial_in_basis': artificial_in_basis,
@@ -673,7 +759,7 @@ class MySimplexMethod(QObject):
             'is_feasible': f_value == 0 and not artificial_in_basis
         }
 
-        # Интерпретация активных ограничений
+        # Interpret active constraints if solution is feasible
         if result['is_feasible'] and additional_in_basis:
             active_constraints = []
             for var, value in additional_in_basis:
@@ -699,17 +785,20 @@ class MySimplexMethod(QObject):
         return result
 
     def _log_final_solution(self, final_solution):
+        """Log the final solution information."""
         msg = ["\n### Final Solution ###"]
 
         if final_solution['is_feasible']:
             msg.append("✅ Found feasible optimal solution")
             msg.append("Solution:")
 
+            # Log all variable values
             for var, value in final_solution['solution'].items():
                 msg.append(f"{var} = {value:.6f}")
 
             msg.append(f"Objective value: {final_solution['f_value']:.6f}")
 
+            # Log active constraints information
             if final_solution['additional_in_basis']:
                 msg.append("\nActive constraints:")
                 for constraint in final_solution['active_constraints']:
@@ -717,7 +806,8 @@ class MySimplexMethod(QObject):
                         msg.append(
                             f"  {constraint['var']} > 0 => {constraint['original_var']} = 0 (non-negativity constraint active)")
                     else:
-                        msg.append(f"  {constraint['var']} > 0 => {constraint['original_var']} = 0 (constraint inactive)")
+                        msg.append(
+                            f"  {constraint['var']} > 0 => {constraint['original_var']} = 0 (constraint inactive)")
         else:
             msg.append("❌ No feasible solution found")
             msg.append(f"F value: {final_solution['f_value']:.6f}")
@@ -728,11 +818,9 @@ class MySimplexMethod(QObject):
     def _verify_with_scipy(self):
         self.log_emitter.log_signal.emit("\n🔍 Verifying solution with scipy.optimize.minimize...")
 
-        # Преобразование целевой функции
         def objective(vars):
             return sp.lambdify(self.variables, self.function, 'numpy')(vars[0], vars[1])
 
-        # Преобразование ограничений
         scipy_constraints = []
         for constr in self.constraints:
             def constraint_func(vars, c=constr):
@@ -743,13 +831,10 @@ class MySimplexMethod(QObject):
                 'fun': constraint_func
             })
 
-        # Границы: x >= 0, y >= 0
         bounds = [(0, None), (0, None)]
 
-        # Начальное приближение
         initial_guess = [0, 0]
 
-        # Решение задачи
         self.scipy_result = minimize(
             objective,
             initial_guess,
@@ -758,7 +843,6 @@ class MySimplexMethod(QObject):
             constraints=scipy_constraints
         )
 
-        # Логирование результатов
         msg = [
             "### Scipy Optimization Results ###",
             f"Solution: x = {self.scipy_result.x[0]:.6f}, y = {self.scipy_result.x[1]:.6f}",
@@ -771,7 +855,6 @@ class MySimplexMethod(QObject):
             f"Message: {self.scipy_result.message}"
         ]
 
-        # Сравнение с симплекс-методом
         if self.solution_results.get('solution', {}).get('is_feasible', False):
             simplex_sol = self.solution_results['solution']['solution']
             x_simplex = simplex_sol.get('x', 0)
