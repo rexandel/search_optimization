@@ -235,7 +235,7 @@ QTabBar::tab:selected {
        <widget class="Visualization3DWidget" name="openGLWidget"/>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
         <property name="leftMargin">
          <number>5</number>
         </property>
@@ -264,7 +264,7 @@ QTabBar::tab:selected {
            </attribute>
            <layout class="QGridLayout" name="gridLayout_2">
             <item row="0" column="0">
-             <widget class="QGroupBox" name="gridGroupBox1">
+             <widget class="QGroupBox" name="firstTabGridGroupBox">
               <layout class="QVBoxLayout" name="mainFirstTabVerticalLayout">
                <item>
                 <layout class="QVBoxLayout" name="initialPointVerticalLayout">
@@ -546,7 +546,7 @@ QTabBar::tab:selected {
            </attribute>
            <layout class="QGridLayout" name="gridLayout_3">
             <item row="0" column="0">
-             <widget class="QGroupBox" name="gridGroupBox2">
+             <widget class="QGroupBox" name="secondTabGridGroupBox">
               <layout class="QVBoxLayout" name="verticalLayout_2">
                <item>
                 <widget class="QRadioButton" name="myMethodRadioButton">
@@ -613,7 +613,7 @@ QTabBar::tab:selected {
          </widget>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="managmentVerticalLayout">
+         <layout class="QVBoxLayout" name="managmentVerticalLayout" stretch="0,0,0,0">
           <item>
            <layout class="QHBoxLayout" name="clearButtonHorizontalLayout">
             <property name="leftMargin">
@@ -643,227 +643,237 @@ QTabBar::tab:selected {
            </layout>
           </item>
           <item>
-           <layout class="QHBoxLayout" name="functionManagerHorizontalLayout" stretch="1,0">
-            <property name="leftMargin">
-             <number>10</number>
-            </property>
-            <property name="topMargin">
-             <number>5</number>
-            </property>
-            <property name="rightMargin">
-             <number>10</number>
-            </property>
-            <property name="bottomMargin">
-             <number>5</number>
-            </property>
-            <item>
-             <widget class="QComboBox" name="selectFunctionComboBox">
-              <property name="font">
-               <font>
-                <pointsize>10</pointsize>
-               </font>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="functionManagerButton">
-              <property name="text">
-               <string/>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../images/setting.png</normaloff>../images/setting.png</iconset>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="startStopHorizontalLayout">
-            <property name="leftMargin">
-             <number>10</number>
-            </property>
-            <property name="topMargin">
-             <number>5</number>
-            </property>
-            <property name="rightMargin">
-             <number>10</number>
-            </property>
-            <property name="bottomMargin">
-             <number>5</number>
-            </property>
-            <item>
-             <widget class="QPushButton" name="startButton">
-              <property name="font">
-               <font>
-                <pointsize>10</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>Start</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPushButton" name="stopButton">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="font">
-               <font>
-                <pointsize>10</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>Stop</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QVBoxLayout" name="logVerticalLayout">
-            <property name="leftMargin">
-             <number>10</number>
-            </property>
-            <property name="topMargin">
-             <number>5</number>
-            </property>
-            <property name="rightMargin">
-             <number>10</number>
-            </property>
-            <property name="bottomMargin">
-             <number>5</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="logEventLabel">
-              <property name="font">
-               <font>
-                <pointsize>10</pointsize>
-                <weight>50</weight>
-                <bold>false</bold>
-                <underline>false</underline>
-               </font>
-              </property>
-              <property name="text">
-               <string>Work log</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPlainTextEdit" name="logEventPlainTextEdit">
-              <property name="font">
-               <font>
-                <family>Consolas</family>
-                <pointsize>10</pointsize>
-               </font>
-              </property>
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <layout class="QHBoxLayout" name="workLogControlsHorizontalLayout">
-              <item>
-               <widget class="QPushButton" name="viewInSeparateWindowButton">
-                <property name="font">
-                 <font>
-                  <pointsize>10</pointsize>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Separate Window</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="clearWorkLogButton">
-                <property name="text">
-                 <string>Clear Work Log</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-           </layout>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QVBoxLayout" name="settingsVerticalLayout">
-          <property name="leftMargin">
-           <number>10</number>
-          </property>
-          <property name="topMargin">
-           <number>5</number>
-          </property>
-          <property name="rightMargin">
-           <number>10</number>
-          </property>
-          <property name="bottomMargin">
-           <number>5</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="label">
-            <property name="font">
-             <font>
-              <pointsize>10</pointsize>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Settings</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignCenter</set>
-            </property>
+           <widget class="QGroupBox" name="verticalGroupBox">
+            <layout class="QVBoxLayout" name="appWorkControlsVerticalLayout">
+             <item>
+              <layout class="QHBoxLayout" name="functionManagerHorizontalLayout" stretch="2,1">
+               <property name="leftMargin">
+                <number>10</number>
+               </property>
+               <property name="topMargin">
+                <number>5</number>
+               </property>
+               <property name="rightMargin">
+                <number>10</number>
+               </property>
+               <property name="bottomMargin">
+                <number>5</number>
+               </property>
+               <item>
+                <widget class="QComboBox" name="selectFunctionComboBox">
+                 <property name="font">
+                  <font>
+                   <pointsize>10</pointsize>
+                  </font>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="functionManagerButton">
+                 <property name="text">
+                  <string/>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>../images/setting.png</normaloff>../images/setting.png</iconset>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="startStopHorizontalLayout">
+               <property name="leftMargin">
+                <number>10</number>
+               </property>
+               <property name="topMargin">
+                <number>5</number>
+               </property>
+               <property name="rightMargin">
+                <number>10</number>
+               </property>
+               <property name="bottomMargin">
+                <number>5</number>
+               </property>
+               <item>
+                <widget class="QPushButton" name="startButton">
+                 <property name="font">
+                  <font>
+                   <pointsize>10</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Start</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="stopButton">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <pointsize>10</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Stop</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="axisVisibility">
-            <property name="font">
-             <font>
-              <pointsize>10</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>Axis Visibility</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
+           <widget class="QGroupBox" name="workLogGroupBox">
+            <layout class="QVBoxLayout" name="logVerticalLayout">
+             <property name="leftMargin">
+              <number>10</number>
+             </property>
+             <property name="topMargin">
+              <number>5</number>
+             </property>
+             <property name="rightMargin">
+              <number>10</number>
+             </property>
+             <property name="bottomMargin">
+              <number>5</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="workLogLabel">
+               <property name="font">
+                <font>
+                 <pointsize>10</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
+                 <underline>false</underline>
+                </font>
+               </property>
+               <property name="text">
+                <string>Work log</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPlainTextEdit" name="workLogPlainTextEdit">
+               <property name="font">
+                <font>
+                 <family>Consolas</family>
+                 <pointsize>10</pointsize>
+                </font>
+               </property>
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="workLogControlsHorizontalLayout">
+               <item>
+                <widget class="QPushButton" name="viewInSeparateWindowButton">
+                 <property name="font">
+                  <font>
+                   <pointsize>10</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Separate Window</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="clearWorkLogButton">
+                 <property name="text">
+                  <string>Clear Work Log</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="gridVisibility">
-            <property name="font">
-             <font>
-              <pointsize>10</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>Grid Visibility</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="returnButton">
-            <property name="font">
-             <font>
-              <pointsize>10</pointsize>
-             </font>
-            </property>
-            <property name="text">
-             <string>Return to initial state</string>
-            </property>
+           <widget class="QGroupBox" name="settingsGroupBox">
+            <layout class="QVBoxLayout" name="settingsVerticalLayout">
+             <property name="leftMargin">
+              <number>10</number>
+             </property>
+             <property name="topMargin">
+              <number>5</number>
+             </property>
+             <property name="rightMargin">
+              <number>10</number>
+             </property>
+             <property name="bottomMargin">
+              <number>5</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="settingsLabel">
+               <property name="font">
+                <font>
+                 <pointsize>10</pointsize>
+                 <weight>50</weight>
+                 <bold>false</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Settings</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="axisVisibility">
+               <property name="font">
+                <font>
+                 <pointsize>10</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Axis Visibility</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="gridVisibility">
+               <property name="font">
+                <font>
+                 <pointsize>10</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Grid Visibility</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="returnButton">
+               <property name="font">
+                <font>
+                 <pointsize>10</pointsize>
+                </font>
+               </property>
+               <property name="text">
+                <string>Return to initial state</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
          </layout>

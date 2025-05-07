@@ -53,11 +53,10 @@ class MainWindow(QMainWindow):
         self.setFocusPolicy(Qt.StrongFocus)
 
     def clear_work_log(self):
-        self.logEventPlainTextEdit.clear()
+        self.workLogPlainTextEdit.clear()
 
     def open_work_log_in_separate_window(self):
-        log_text = self.logEventPlainTextEdit.toPlainText()
-
+        log_text = self.workLogPlainTextEdit.toPlainText()
         self.work_log_window = WorkLogWindow(log_text)
         self.work_log_window.show()
 
@@ -73,7 +72,6 @@ class MainWindow(QMainWindow):
             self.current_tab_line_edits = line_edits
 
     def on_tab_changed(self, index):
-        self.openGLWidget.update_optimization_path(np.array([]))
         self.update_current_tab_line_edits()
 
     def keyPressEvent(self, event):
@@ -85,15 +83,15 @@ class MainWindow(QMainWindow):
 
     @QtCore.pyqtSlot(str)
     def append_log_message(self, message: str):
-        self.logEventPlainTextEdit.appendPlainText(message)
+        self.workLogPlainTextEdit.appendPlainText(message)
 
     @QtCore.pyqtSlot(str)
     def append_html_log_message(self, html: str):
-        cursor = self.logEventPlainTextEdit.textCursor()
+        cursor = self.workLogPlainTextEdit.textCursor()
         cursor.movePosition(cursor.End)
         cursor.insertHtml(html)
-        self.logEventPlainTextEdit.setTextCursor(cursor)
-        self.logEventPlainTextEdit.ensureCursorVisible()
+        self.workLogPlainTextEdit.setTextCursor(cursor)
+        self.workLogPlainTextEdit.ensureCursorVisible()
 
     def toggle_grid_visibility(self, state):
         self.openGLWidget.grid_visible = bool(state)
@@ -128,6 +126,7 @@ class MainWindow(QMainWindow):
         current_index = self.tabWidget.currentIndex()
 
         if current_index == 0:
+            self.openGLWidget.update_optimization_path(np.array([]))
             if len(self.function_manager_helper.get_current_function()['constraints']) != 0:
                 self.statusbar.showMessage("Attention: Selected function is not supported by GradientDescent class")
                 return
@@ -179,7 +178,7 @@ class MainWindow(QMainWindow):
                 self.statusbar.showMessage("Error: Number of iterations must be a positive integer")
                 return
 
-            self.logEventPlainTextEdit.clear()
+            self.workLogPlainTextEdit.clear()
             self.tabWidget.setEnabled(False)
             self.selectFunctionComboBox.setEnabled(False)
             self.startButton.setEnabled(False)
@@ -203,7 +202,8 @@ class MainWindow(QMainWindow):
 
             self.statusbar.showMessage("Optimization started")
         elif current_index == 1:
-            self.logEventPlainTextEdit.clear()
+            self.workLogPlainTextEdit.clear()
+            self.openGLWidget.update_optimization_path(np.array([]))
 
             if self.myMethodRadioButton.isChecked():
                 if len(self.function_manager_helper.get_current_function()['constraints']) < 3:

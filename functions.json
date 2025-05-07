@@ -43,7 +43,7 @@
             ]
         },
         {
-            "name": "Example #1 (Maximize)",
+            "name": "Example function for simplex (Maximize)",
             "formula": "f(x,y) = -6 * x - 3 * y + 0.5 * (x^2 + 2 * x * y + 2 * y^2)",
             "python_formula": "lambda x, y: -6 * x - 3 * y + 0.5 * (x**2 + 2 * x * y + 2 * y**2)",
             "constraints": [
