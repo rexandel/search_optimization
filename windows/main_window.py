@@ -198,6 +198,10 @@ class MainWindow(QMainWindow):
             self.logEventPlainTextEdit.clear()
 
             if self.myMethodRadioButton.isChecked():
+                if len(self.function_manager_helper.get_current_function()['constraints']) < 3:
+                    self.statusbar.showMessage("Attention: The selected function is not supported by MySimplexMethod class")
+                    return
+
                 self.tabWidget.setEnabled(False)
                 self.selectFunctionComboBox.setEnabled(False)
                 self.startButton.setEnabled(False)
@@ -223,7 +227,7 @@ class MainWindow(QMainWindow):
 
                     self.statusbar.showMessage("Simplex method optimization started")
                 else:
-                    raise ValueError(symbolic_result['error'])
+                    self.statusbar.showMessage(symbolic_result['error'])
 
             elif self.libraryMethodRadioButton.isChecked():
                 self.tabWidget.setEnabled(False)
