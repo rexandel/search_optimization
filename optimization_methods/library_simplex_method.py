@@ -61,7 +61,7 @@ class LibrarySimplexMethod(QObject):
                 method='SLSQP',
                 bounds=bounds,
                 constraints=scipy_constraints,
-                options={'disp': True, 'maxiter': 1000}
+                options={'disp': False, 'maxiter': 1000}
             )
 
             end_time = time.time()

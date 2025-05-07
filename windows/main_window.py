@@ -47,9 +47,13 @@ class MainWindow(QMainWindow):
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
         self.clearButton.clicked.connect(self.clear_all_line_edits)
         self.viewInSeparateWindowButton.clicked.connect(self.open_work_log_in_separate_window)
+        self.clearWorkLogButton.clicked.connect(self.clear_work_log)
         # self.viewButton.clicked.connect(self.view_function_graph)
 
         self.setFocusPolicy(Qt.StrongFocus)
+
+    def clear_work_log(self):
+        self.logEventPlainTextEdit.clear()
 
     def open_work_log_in_separate_window(self):
         log_text = self.logEventPlainTextEdit.toPlainText()
