@@ -462,7 +462,15 @@ class MySimplexMethod(QObject):
             iteration_info['is_optimal'] = is_optimal
 
             if is_optimal:
+                # Инициализация пустых pivot_col и pivot_row чтобы избежать ошибки в _log_simplex_iteration
+                iteration_info['pivot_col'] = {'var': None, 'index': None, 'coef': None}
+                iteration_info['pivot_row'] = {'var': None, 'index': None, 'ratio': None}
+                iteration_info['ratio_data'] = []
+                iteration_info['pivot_element'] = None
+
                 self.solution_results['iterations'].append(iteration_info)
+                self._log_simplex_iteration(iteration_info)  # Логируем итерацию перед обработкой финального решения
+
                 final_solution = self._handle_final_solution(frac_rows, variables_order, z_vars, vs, ws,
                                                              complementary_slackness)
                 self.solution_results['solution'] = final_solution
@@ -519,7 +527,14 @@ class MySimplexMethod(QObject):
 
             if pivot_col_idx is None:
                 iteration_info['no_pivot_col'] = True
+                # Добавляем пустые поля для ratio_data и pivot_row чтобы избежать ошибки в _log_simplex_iteration
+                iteration_info['ratio_data'] = []
+                iteration_info['pivot_row'] = {'var': None, 'index': None, 'ratio': None}
+                iteration_info['pivot_element'] = None
+
                 self.solution_results['iterations'].append(iteration_info)
+                self._log_simplex_iteration(iteration_info)  # Логируем итерацию перед выходом из цикла
+
                 # Отправка финальных точек для визуализации
                 self.update_signal.emit(np.array(self.points, dtype=float))
                 break
@@ -569,7 +584,12 @@ class MySimplexMethod(QObject):
 
             if pivot_row_idx is None:
                 iteration_info['unbounded'] = True
+                # Добавляем поле pivot_element для избежания ошибки в _log_simplex_iteration
+                iteration_info['pivot_element'] = None
+
                 self.solution_results['iterations'].append(iteration_info)
+                self._log_simplex_iteration(iteration_info)  # Логируем итерацию перед выходом из цикла
+
                 # Отправка финальных точек для визуализации
                 self.update_signal.emit(np.array(self.points, dtype=float))
                 break
@@ -637,27 +657,38 @@ class MySimplexMethod(QObject):
         for var, coef in iteration_info['f_coeffs'].items():
             msg.append(f"{var}: {coef:.6f}")
 
-        # Log pivot selection information
-        msg.append("\n### Pivot Selection ###")
-        msg.append(
-            f"Leading column: {iteration_info['pivot_col']['var']} (coef: {iteration_info['pivot_col']['coef']:.6f})")
-
-        # Log ratio test information
-        msg.append("\n### Ratios ###")
-        for ratio in iteration_info['ratio_data']:
-            if 'skipped' in ratio:
-                msg.append(f"Row {ratio['row_var']}: skipped ({ratio['reason']})")
-            else:
+        # Проверка наличия информации о ведущем столбце
+        if iteration_info['is_optimal']:
+            msg.append("\n### Optimal solution reached ###")
+        elif 'no_pivot_col' in iteration_info and iteration_info['no_pivot_col']:
+            msg.append("\n### No valid pivot column found ###")
+        elif 'unbounded' in iteration_info and iteration_info['unbounded']:
+            msg.append("\n### Problem is unbounded ###")
+        else:
+            # Log pivot selection information
+            msg.append("\n### Pivot Selection ###")
+            if iteration_info['pivot_col']['var'] is not None:
                 msg.append(
-                    f"Row {ratio['row_var']}: {ratio['free_term']:.6f} / {ratio['pivot_col_val']:.6f} = {ratio['ratio']:.6f}")
+                    f"Leading column: {iteration_info['pivot_col']['var']} (coef: {iteration_info['pivot_col']['coef']:.6f})")
 
-        # Log selected pivot information
-        msg.append(
-            f"\nLeading row: {iteration_info['pivot_row']['var']} (ratio: {iteration_info['pivot_row']['ratio']:.6f})")
-        msg.append(f"Pivot element: {iteration_info['pivot_element']:.6f}")
+            # Log ratio test information
+            msg.append("\n### Ratios ###")
+            for ratio in iteration_info['ratio_data']:
+                if 'skipped' in ratio:
+                    msg.append(f"Row {ratio['row_var']}: skipped ({ratio['reason']})")
+                else:
+                    msg.append(
+                        f"Row {ratio['row_var']}: {ratio['free_term']:.6f} / {ratio['pivot_col_val']:.6f} = {ratio['ratio']:.6f}")
+
+            # Log selected pivot information
+            if iteration_info['pivot_row']['var'] is not None:
+                msg.append(
+                    f"\nLeading row: {iteration_info['pivot_row']['var']} (ratio: {iteration_info['pivot_row']['ratio']:.6f})")
+                if iteration_info['pivot_element'] is not None:
+                    msg.append(f"Pivot element: {iteration_info['pivot_element']:.6f}")
 
         # Log objective value if available
-        if 'objective_value' in iteration_info:
+        if 'objective_value' in iteration_info and iteration_info['objective_value'] is not None:
             msg.append(f"\nCurrent objective value: {iteration_info['objective_value']:.6f}")
 
         self.log_emitter.log_signal.emit("\n".join(msg))
