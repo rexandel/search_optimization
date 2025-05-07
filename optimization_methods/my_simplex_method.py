@@ -108,37 +108,34 @@ class MySimplexMethod(QObject):
         self.log_emitter.log_signal.emit("🔧 Building KKT system...")
 
         n_constraints = len(self.constraints)
-        # Create Lagrange multipliers (λ), non-negativity variables (v), and slackness variables (w)
+        # Создание множителей Лагранжа (λ), переменных v и w
         lambdas = [sp.symbols(f'lambda{i + 1}', real=True) for i in range(n_constraints)]
         vs = [sp.symbols(f'v{i + 1}', real=True) for i in range(len(self.variables))]
         ws = [sp.symbols(f'w{i + 1}', real=True) for i in range(n_constraints)]
 
-        # Construct the Lagrangian function
+        # Построение функции Лагранжа
         L = self.function + sum(lambdas[i] * self.constraints[i] for i in range(n_constraints))
 
-        # Derivatives of Lagrangian
+        # Производные функции Лагранжа
         dL_dx = [sp.diff(L, var) for var in self.variables]
         dL_dlambda = self.constraints
 
-        # KKT conditions
+        # Условия KKT
         kkt_conditions = []
         for i in range(len(self.variables)):
             kkt_conditions.append(dL_dx[i] - vs[i])
         for i in range(n_constraints):
             kkt_conditions.append(dL_dlambda[i] + ws[i])
 
-        # Feasibility conditions
         primal_feasibility = [constr <= 0 for constr in self.constraints] + [var >= 0 for var in self.variables]
         dual_feasibility = [lam >= 0 for lam in lambdas] + [v >= 0 for v in vs] + [w >= 0 for w in ws]
 
-        # Complementary slackness conditions
+        # Условия дополняющей нежёсткости
         complementary_slackness = [(self.variables[i], vs[i]) for i in range(len(self.variables))]
         complementary_slackness += [(lambdas[i], ws[i]) for i in range(n_constraints)]
 
-        # Collect all variables
         all_variables = self.variables + lambdas + vs + ws
 
-        # Store the complete KKT system
         self.kkt_system = {
             'lagrangian': L,
             'kkt_conditions': kkt_conditions,
@@ -201,30 +198,29 @@ class MySimplexMethod(QObject):
         variables = self.kkt_system['all_variables']
         vs = self.kkt_system['vs']
         ws = self.kkt_system['ws']
-        z_vars = []  # Artificial variables
+        z_vars = []
         modified_equations = []
-        z_expressions = {}  # Expressions for artificial variables
-        artificial_info = []  # Information about each equation modification
+        z_expressions = {}  # Выражения для искусственных переменных
+        artificial_info = []
 
         for i, eq in enumerate(self.kkt_system['kkt_conditions']):
             left_part = eq
             right_part = 0
             free_term = left_part.as_coeff_add(*variables)[0]
 
-            # Determine which auxiliary variable we're working with (v or w)
+            # Определение, с какой дополнительной переменной работаем (v или w)
             if i < len(vs):
                 dop_var = vs[i]
                 dop_var_name = f'v{i + 1}'
-                dop_var_sign = -1  # v variables have negative sign in equations
+                dop_var_sign = -1
             else:
                 dop_var = ws[i - len(vs)]
                 dop_var_name = f'w{i - len(vs) + 1}'
-                dop_var_sign = 1  # w variables have positive sign in equations
+                dop_var_sign = 1
 
-            # Check if we need an artificial variable for this equation
+            # Проверка необходимости искусственной переменной для этого уравнения
             need_artificial = (dop_var_sign < 0 and free_term < 0) or (dop_var_sign > 0 and free_term > 0)
 
-            # Store equation information
             eq_info = {
                 'equation_index': i + 1,
                 'equation': eq,
@@ -234,12 +230,12 @@ class MySimplexMethod(QObject):
                 'need_artificial': need_artificial
             }
 
-            # Move free term to right side
+            # Перенос свободного члена в правую часть
             right_part_final = -free_term
             modified_eq = left_part - free_term
 
             if need_artificial:
-                # Add artificial variable z
+                # Добавление искусственной переменной z
                 z_var = sp.symbols(f'z{i + 1}', real=True)
                 z_vars.append(z_var)
                 modified_eq = modified_eq + z_var
@@ -254,7 +250,6 @@ class MySimplexMethod(QObject):
             artificial_info.append(eq_info)
             modified_equations.append((modified_eq, right_part_final))
 
-        # Store the artificial system information
         self.artificial_system = {
             'z_vars': z_vars,
             'z_expressions': z_expressions,
@@ -672,11 +667,11 @@ class MySimplexMethod(QObject):
         f_row = [row for row in frac_rows if row[0] == 'F'][0]
         f_value = float(f_row[1])
 
-        # Check if any artificial variables remain in the basis with positive values
+        # Проверка наличия искусственных переменных в базисе
         artificial_in_basis = any(
             row[0] in [str(z) for z in z_vars] and float(row[1]) > 0 for row in frac_rows if row[0] != 'F')
 
-        # Check additional variables (v and w) in basis with positive values
+        # Проверка дополнительных переменных (v и w) в базисе
         additional_vars = [str(v) for v in vs] + [str(w) for w in ws]
         additional_in_basis = [
             (row[0], float(row[1]))
@@ -684,7 +679,7 @@ class MySimplexMethod(QObject):
             if row[0] != 'F' and row[0] in additional_vars and float(row[1]) > 0
         ]
 
-        # Extract solution values
+        # Извлечение значений решения
         solution = {}
         for row in frac_rows:
             if row[0] != 'F':
@@ -696,12 +691,12 @@ class MySimplexMethod(QObject):
             if str(var) not in solution:
                 solution[str(var)] = 0.0
 
-        # Analyze implications of additional variables in basis
+        # Анализ влияния дополнительных переменных в базисе
         additional_analysis = []
         for var, value in additional_in_basis:
             analysis = {'var': var, 'value': value, 'implications': []}
 
-            # Check complementary slackness conditions
+            # Проверка условий дополняющей нежёсткости
             for var1, var2 in complementary_slackness:
                 if str(var1) == var:
                     analysis['implications'].append({
@@ -716,7 +711,7 @@ class MySimplexMethod(QObject):
 
             additional_analysis.append(analysis)
 
-        # Prepare final solution result
+        # Подготовка финального результата решения
         result = {
             'f_value': f_value,
             'artificial_in_basis': artificial_in_basis,
@@ -726,7 +721,7 @@ class MySimplexMethod(QObject):
             'is_feasible': f_value == 0 and not artificial_in_basis
         }
 
-        # Interpret active constraints if solution is feasible
+        # Интерпретация активных ограничений, если решение допустимо
         if result['is_feasible'] and additional_in_basis:
             active_constraints = []
             for var, value in additional_in_basis:
