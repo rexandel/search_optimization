@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1905</width>
-    <height>958</height>
+    <width>1379</width>
+    <height>817</height>
    </rect>
   </property>
   <property name="palette">
@@ -148,7 +148,7 @@
      </spacer>
     </item>
     <item row="1" column="1">
-     <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2">
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,1">
       <item>
        <widget class="Visualization3DWidget" name="openGLWidget"/>
       </item>
@@ -467,36 +467,30 @@
              <widget class="QGroupBox" name="gridGroupBox2">
               <layout class="QVBoxLayout" name="verticalLayout_2">
                <item>
-                <widget class="QGroupBox" name="horizontalGroupBox">
-                 <layout class="QHBoxLayout" name="chooseMethodHorizontalLayout">
-                  <item>
-                   <widget class="QRadioButton" name="myMethodRadioButton">
-                    <property name="font">
-                     <font>
-                      <pointsize>10</pointsize>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Solve With My Simplex Method</string>
-                    </property>
-                    <property name="checked">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QRadioButton" name="libraryMethodRadioButton">
-                    <property name="font">
-                     <font>
-                      <pointsize>10</pointsize>
-                     </font>
-                    </property>
-                    <property name="text">
-                     <string>Solve With Simplex Method From Library</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
+                <widget class="QRadioButton" name="myMethodRadioButton">
+                 <property name="font">
+                  <font>
+                   <pointsize>10</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Solve With My Simplex Method</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="libraryMethodRadioButton">
+                 <property name="font">
+                  <font>
+                   <pointsize>10</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Solve With Simplex Method From Library</string>
+                 </property>
                 </widget>
                </item>
               </layout>
@@ -632,6 +626,7 @@
              <widget class="QPlainTextEdit" name="logEventPlainTextEdit">
               <property name="font">
                <font>
+                <family>Consolas</family>
                 <pointsize>10</pointsize>
                </font>
               </property>
@@ -780,8 +775,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1905</width>
-     <height>26</height>
+     <width>1379</width>
+     <height>21</height>
     </rect>
    </property>
   </widget>
