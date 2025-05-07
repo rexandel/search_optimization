@@ -535,7 +535,7 @@ class MySimplexMethod(QObject):
                     ratio_data.append({
                         'row_var': row[0],
                         'skipped': True,
-                        'reason': 'F или совпадает с ведущим столбцом'
+                        'reason': 'Either column F or same as leading column'
                     })
                     continue
 
@@ -561,7 +561,7 @@ class MySimplexMethod(QObject):
                         'free_term': float(free_term),
                         'pivot_col_val': float(pivot_col_val),
                         'skipped': True,
-                        'reason': 'Коэффициент в ведущем столбце <= 0'
+                        'reason': 'Сoefficient in leading column <= 0'
                     })
 
             iteration_info['ratio_data'] = ratio_data
@@ -711,9 +711,18 @@ class MySimplexMethod(QObject):
 
             additional_analysis.append(analysis)
 
+        objective_value = None
+        if 'x' in solution and 'y' in solution:
+            try:
+                x, y = solution['x'], solution['y']
+                objective_value = float(sp.lambdify(self.variables, self.function)(x, y))
+            except Exception as e:
+                objective_value = None  # Если вычисление не удалось, оставляем None
+
         # Подготовка финального результата решения
         result = {
             'f_value': f_value,
+            'objective_value': objective_value,
             'artificial_in_basis': artificial_in_basis,
             'additional_in_basis': additional_in_basis,
             'solution': solution,
@@ -758,7 +767,7 @@ class MySimplexMethod(QObject):
             for var, value in final_solution['solution'].items():
                 msg.append(f"{var} = {value:.6f}")
 
-            msg.append(f"Objective value: {final_solution['f_value']:.6f}")
+            msg.append(f"Objective value: {final_solution['objective_value']:.6f}")
 
             # Log active constraints information
             if final_solution['additional_in_basis']:
@@ -826,8 +835,7 @@ class MySimplexMethod(QObject):
                 "\n### Comparison ###",
                 f"Simplex solution: x = {x_simplex:.6f}, y = {y_simplex:.6f}",
                 f"Scipy solution: x = {self.scipy_result.x[0]:.6f}, y = {self.scipy_result.x[1]:.6f}",
-                f"Difference: Δx = {abs(x_simplex - self.scipy_result.x[0]):.6f}, Δy = {abs(y_simplex - self.scipy_result.x[1]):.6f}",
-                f"Objective difference: {abs(sp.lambdify(self.variables, self.function)(x_simplex, y_simplex) - self.scipy_result.fun):.6f}"
+                f"Difference: Δx = {abs(x_simplex - self.scipy_result.x[0]):.6f}, Δy = {abs(y_simplex - self.scipy_result.x[1]):.6f}"
             ])
 
         self.log_emitter.log_signal.emit("\n".join(msg))

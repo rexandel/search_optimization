@@ -124,6 +124,10 @@ class MainWindow(QMainWindow):
         current_index = self.tabWidget.currentIndex()
 
         if current_index == 0:
+            if len(self.function_manager_helper.get_current_function()['constraints']) != 0:
+                self.statusbar.showMessage("Attention: Selected function is not supported by GradientDescent class")
+                return
+
             data = {
                 'x': self.xLineEdit.text(),
                 'y': self.yLineEdit.text(),
@@ -199,7 +203,7 @@ class MainWindow(QMainWindow):
 
             if self.myMethodRadioButton.isChecked():
                 if len(self.function_manager_helper.get_current_function()['constraints']) < 3:
-                    self.statusbar.showMessage("Attention: The selected function is not supported by MySimplexMethod class")
+                    self.statusbar.showMessage("Attention: Selected function is not supported by MySimplexMethod class")
                     return
 
                 self.tabWidget.setEnabled(False)
