@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1379</width>
-    <height>817</height>
+    <width>1406</width>
+    <height>872</height>
    </rect>
   </property>
   <property name="palette">
@@ -80,6 +80,90 @@
   <property name="windowIcon">
    <iconset>
     <normaloff>../images/main.png</normaloff>../images/main.png</iconset>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QPushButton {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 10px;
+    min-width: 70px;
+}
+
+QPushButton:hover {
+    background-color: #e0e0e0;
+    border: 1px solid #aaa;
+}
+
+QPushButton:pressed {
+    background-color: #d0d0d0;
+}
+
+QPushButton:disabled {
+    background-color: #f5f5f5;
+    color: #999;
+}
+
+QLineEdit, QTextEdit, QPlainTextEdit {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 3px;
+}
+
+QComboBox {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 3px;
+}
+
+QCheckBox, QRadioButton {
+    spacing: 5px;
+}
+
+QGroupBox {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-top: 10px;
+    padding-top: 15px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 3px;
+}
+
+QScrollBar:vertical {
+    border: none;
+    background: #f5f5f5;
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #d0d0d0;
+    min-height: 20px;
+    border-radius: 5px;
+}
+
+QTabWidget::pane {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+QTabBar::tab {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    padding: 5px 10px;
+}
+
+QTabBar::tab:selected {
+    background: white;
+    margin-bottom: -1px;
+}</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -174,7 +258,7 @@
            </font>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="firstTab">
            <attribute name="title">
@@ -615,10 +699,16 @@
               <property name="font">
                <font>
                 <pointsize>10</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+                <underline>false</underline>
                </font>
               </property>
               <property name="text">
                <string>Work log</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -713,10 +803,15 @@
             <property name="font">
              <font>
               <pointsize>10</pointsize>
+              <weight>50</weight>
+              <bold>false</bold>
              </font>
             </property>
             <property name="text">
              <string>Settings</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -775,7 +870,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1379</width>
+     <width>1406</width>
      <height>21</height>
     </rect>
    </property>
