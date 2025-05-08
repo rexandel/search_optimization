@@ -81,26 +81,42 @@ def real_valued_mutation(descendant, bounds=[[-5, 5], [-5, 5]], m=20):
 
 
 def genetic_algorithm(population, number_of_generations=100):
-    parents = select_parents(population)
+    for _ in range(number_of_generations):
+        new_population = []
 
-    descendants = intermediate_recombination(parents)
+        while len(new_population) < len(population):
+            parents = select_parents(population)
 
-    mutated_descendants = np.array([real_valued_mutation(descendant) for descendant in descendants])
+            descendants = intermediate_recombination(parents)
 
-    print(f"Parents: \n{parents}")
-    print()
-    print(f"Descendants: \n{descendants}")
-    print()
-    print(f"Mutated Descendants: \n{mutated_descendants}")
+            mutated_descendants = np.array([real_valued_mutation(descendant) for descendant in descendants])
+
+            for new_individual in mutated_descendants:
+                new_population.append(new_individual)
+
+        population = np.array(new_population)
+
+    return population
 
 
 def main():
     x_bounds = [-5, 5]
     y_bounds = [-5, 5]
-    population_size = 100
+    population_size = 10
 
     population = initialize_population(population_size, x_bounds, y_bounds)
-    genetic_algorithm(population)
+    print("Initial Population:")
+    for i in range(population_size):
+        x, y = population[i]
+        print(f"Individual (Point) {i + 1}: x = {x:.4f}, y = {y:.4f}, f(x,y) = {rosenbrock_function(x, y):.4f}")
+
+    print()
+
+    new_population = genetic_algorithm(population)
+    print("New Population:")
+    for i in range(population_size):
+        x, y = new_population[i]
+        print(f"Individual (Point) {i + 1}: x = {x:.4f}, y = {y:.4f}, f(x,y) = {rosenbrock_function(x, y):.4f}")
 
 
 if __name__ == "__main__":
