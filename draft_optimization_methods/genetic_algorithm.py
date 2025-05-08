@@ -25,8 +25,8 @@ def roulette_method(population):
     else:
         probabilities = fitness / total_fitness
 
-    for index in range(population_size):
-        if np.isnan(population[index]):
+    for index in range(len(probabilities)):
+        if np.isnan(probabilities[index]):
             probabilities[index] = 0
 
     parent_indices = np.random.choice(
@@ -90,8 +90,14 @@ def real_valued_mutation(descendant, bounds=[[-5, 5], [-5, 5]], m=20):
     return mutated_descendant
 
 
+def check_convergence(population, std_threshold=0.005):
+    std_x = np.std(population[:, 0])
+    std_y = np.std(population[:, 1])
+    return std_x < std_threshold and std_y < std_threshold
+
+
 def genetic_algorithm(population, probability_of_recombination, probability_of_mutation, number_of_generations=1000):
-    for _ in range(number_of_generations):
+    for generation in range(number_of_generations):
         new_population = []
 
         while len(new_population) < len(population):
@@ -110,6 +116,10 @@ def genetic_algorithm(population, probability_of_recombination, probability_of_m
                     new_population.append(descendant)
 
         population = np.array(new_population)
+
+        if check_convergence(population):
+            print(f"Convergence is achieved on generation {generation + 1}")
+            break
 
     return population
 
