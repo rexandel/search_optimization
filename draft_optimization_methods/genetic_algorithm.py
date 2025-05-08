@@ -12,7 +12,7 @@ def initialize_population(population_size, x_bounds, y_bounds):
     return population
 
 
-def select_parents(population):
+def roulette_method(population):
     fitness = np.array([rosenbrock_function(x, y) for x, y in population])
     fitness = 1 / (fitness + 1e-10)
 
@@ -80,19 +80,24 @@ def real_valued_mutation(descendant, bounds=[[-5, 5], [-5, 5]], m=20):
     return mutated_descendant
 
 
-def genetic_algorithm(population, number_of_generations=100):
+def genetic_algorithm(population, probability_of_recombination, probability_of_mutation, number_of_generations=1000):
     for _ in range(number_of_generations):
         new_population = []
 
         while len(new_population) < len(population):
-            parents = select_parents(population)
+            parents = roulette_method(population)
 
-            descendants = intermediate_recombination(parents)
+            if np.random.rand() < probability_of_recombination:
+                descendants = intermediate_recombination(parents)
+            else:
+                descendants = parents
 
-            mutated_descendants = np.array([real_valued_mutation(descendant) for descendant in descendants])
-
-            for new_individual in mutated_descendants:
-                new_population.append(new_individual)
+            for descendant in descendants:
+                if np.random.rand() < probability_of_mutation:
+                    mutated_descendant = real_valued_mutation(descendant)
+                    new_population.append(mutated_descendant)
+                else:
+                    new_population.append(descendant)
 
         population = np.array(new_population)
 
@@ -102,7 +107,9 @@ def genetic_algorithm(population, number_of_generations=100):
 def main():
     x_bounds = [-5, 5]
     y_bounds = [-5, 5]
-    population_size = 10
+    population_size = 100
+    probability_of_recombination = 0.8
+    probability_of_mutation = 0.1
 
     population = initialize_population(population_size, x_bounds, y_bounds)
     print("Initial Population:")
@@ -112,7 +119,7 @@ def main():
 
     print()
 
-    new_population = genetic_algorithm(population)
+    new_population = genetic_algorithm(population, probability_of_recombination, probability_of_mutation)
     print("New Population:")
     for i in range(population_size):
         x, y = new_population[i]
