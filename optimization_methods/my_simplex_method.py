@@ -5,7 +5,7 @@ import copy
 from scipy.optimize import minimize
 from PyQt5.QtCore import QObject, pyqtSignal
 import numpy as np
-
+import time
 
 class MySimplexMethod(QObject):
     finished_signal = pyqtSignal()
@@ -42,8 +42,7 @@ class MySimplexMethod(QObject):
         # Setup logging and execution control
         self.log_emitter = log_emitter
         self._is_running = False
-        self.initial_delay = 0.05  # Initial delay between iterations (for visualization)
-        self.min_delay = 0.001  # Minimum delay between iterations
+        self.delay = 0.5
 
         # Optimization results storage
         self.kkt_system = None  # KKT system components
@@ -635,6 +634,7 @@ class MySimplexMethod(QObject):
             # Сохранение информации об итерации и логирование деталей
             self.solution_results['iterations'].append(iteration_info)
             self._log_simplex_iteration(iteration_info)
+            time.sleep(self.delay)
 
         # Проверка достижения максимального количества итераций без сходимости
         if self.current_iteration >= self.max_iterations:

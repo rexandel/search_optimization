@@ -45,12 +45,16 @@ class MainWindow(QMainWindow):
         self.startButton.clicked.connect(self.on_start_button_clicked)
         self.stopButton.clicked.connect(self.on_stop_button_clicked)
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
-        self.clearButton.clicked.connect(self.clear_all_line_edits)
+        self.clearFieldsButton.clicked.connect(self.clear_all_line_edits)
         self.viewInSeparateWindowButton.clicked.connect(self.open_work_log_in_separate_window)
         self.clearWorkLogButton.clicked.connect(self.clear_work_log)
+        self.clearDotsButton.clicked.connect(self.clear_optimization_path)
         # self.viewButton.clicked.connect(self.view_function_graph)
 
         self.setFocusPolicy(Qt.StrongFocus)
+
+    def clear_optimization_path(self):
+        self.openGLWidget.update_optimization_path(np.array([]))
 
     def clear_work_log(self):
         self.workLogPlainTextEdit.clear()

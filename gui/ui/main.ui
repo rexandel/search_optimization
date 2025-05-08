@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1406</width>
-    <height>872</height>
+    <height>874</height>
    </rect>
   </property>
   <property name="palette">
@@ -615,7 +615,7 @@ QTabBar::tab:selected {
         <item>
          <layout class="QVBoxLayout" name="managmentVerticalLayout" stretch="0,0,0,0">
           <item>
-           <layout class="QHBoxLayout" name="clearButtonHorizontalLayout">
+           <layout class="QHBoxLayout" name="clearButtonsHorizontalLayout">
             <property name="leftMargin">
              <number>10</number>
             </property>
@@ -629,7 +629,7 @@ QTabBar::tab:selected {
              <number>5</number>
             </property>
             <item>
-             <widget class="QPushButton" name="clearButton">
+             <widget class="QPushButton" name="clearFieldsButton">
               <property name="font">
                <font>
                 <pointsize>10</pointsize>
@@ -637,6 +637,13 @@ QTabBar::tab:selected {
               </property>
               <property name="text">
                <string>Clear Fields</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="clearDotsButton">
+              <property name="text">
+               <string>Clear Dots</string>
               </property>
              </widget>
             </item>
