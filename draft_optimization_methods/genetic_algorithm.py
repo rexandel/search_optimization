@@ -13,14 +13,24 @@ def initialize_population(population_size, x_bounds, y_bounds):
 
 
 def roulette_method(population):
+    population_size = len(population)
+
     fitness = np.array([rosenbrock_function(x, y) for x, y in population])
     fitness = 1 / (fitness + 1e-10)
 
     total_fitness = np.sum(fitness)
-    probabilities = fitness / total_fitness
+
+    if total_fitness == 0:
+        probabilities = np.ones(population_size) / population_size
+    else:
+        probabilities = fitness / total_fitness
+
+    for index in range(population_size):
+        if np.isnan(population[index]):
+            probabilities[index] = 0
 
     parent_indices = np.random.choice(
-        len(population),
+        population_size,
         size=2,
         p=probabilities
     )
