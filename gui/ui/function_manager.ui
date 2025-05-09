@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../images/function_manager.png</normaloff>../images/function_manager.png</iconset>
+    <normaloff>../images/function_manager_window.png</normaloff>../images/function_manager_window.png</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="1" column="2">

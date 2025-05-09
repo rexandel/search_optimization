@@ -470,6 +470,7 @@ class MainWindow(QMainWindow):
         self.tabWidget.setEnabled(True)
         self.selectFunctionComboBox.setEnabled(True)
         self.startButton.setEnabled(True)
+        self.clearDotsButton.setEnabled(True)
         self.stopButton.setEnabled(False)
         self.append_log_message("Optimization finished")
 

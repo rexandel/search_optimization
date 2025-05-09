@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1759</width>
-    <height>1054</height>
+    <height>1039</height>
    </rect>
   </property>
   <property name="palette">
@@ -79,7 +79,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../images/main.png</normaloff>../images/main.png</iconset>
+    <normaloff>../images/main_window.png</normaloff>../images/main_window.png</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">QPushButton {
@@ -991,12 +991,18 @@ QTabBar::tab:selected {
                </item>
                <item>
                 <widget class="QPushButton" name="functionManagerButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="text">
                   <string/>
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>../images/setting.png</normaloff>../images/setting.png</iconset>
+                   <normaloff>../images/open_function_manager.png</normaloff>../images/open_function_manager.png</iconset>
                  </property>
                 </widget>
                </item>
