@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 import numpy as np
 import time
+import uuid
 
 
 class GeneticAlgorithm(QObject):
@@ -17,11 +18,12 @@ class GeneticAlgorithm(QObject):
         self._probability_of_recombination = params_dict['probability_of_recombination']
         self._probability_of_mutation = params_dict['probability_of_mutation']
         self._function = params_dict['function']
+        self._truncation_threshold = params_dict.get('truncation_threshold', 0.5)
 
         self._is_running = False
         self.points = []
         self.log_emitter = log_emitter
-        self.initial_delay = 0.05
+        self.initial_delay = 0.1
         self.min_delay = 0.01
 
     def _initialize_population(self):
@@ -56,9 +58,9 @@ class GeneticAlgorithm(QObject):
             alpha_for_first_parent = np.random.uniform(-coefficient, 1 + coefficient)
             alpha_for_second_parent = np.random.uniform(-coefficient, 1 + coefficient)
             first_descendant[gen_index] = first_parent[gen_index] + alpha_for_first_parent * (
-                second_parent[gen_index] - first_parent[gen_index])
+                    second_parent[gen_index] - first_parent[gen_index])
             second_descendant[gen_index] = first_parent[gen_index] + alpha_for_second_parent * (
-                second_parent[gen_index] - first_parent[gen_index])
+                    second_parent[gen_index] - first_parent[gen_index])
         return np.array([first_descendant, second_descendant])
 
     def _real_valued_mutation(self, descendant, m=20):
@@ -74,8 +76,37 @@ class GeneticAlgorithm(QObject):
                 delta += alpha_value * (2 ** (-index))
             sign = 1 if np.random.random() < 0.5 else -1
             mutated_descendant[gen_index] = descendant[gen_index] + sign * alpha * delta
-            mutated_descendant[gen_index] = np.clip(mutated_descendant[gen_index], bounds[gen_index][0], bounds[gen_index][1])
+            mutated_descendant[gen_index] = np.clip(mutated_descendant[gen_index], bounds[gen_index][0],
+                                                    bounds[gen_index][1])
         return mutated_descendant
+
+    def _truncation_selection(self, population, descendants):
+        combined_population = np.vstack((population, descendants))
+
+        fitness = np.array([self._function(x, y) for x, y in combined_population])
+
+        # Функция np.argsort() возвращает массив индексов, которые указывают,
+        # в каком порядке взять элементы, чтобы они были отсортированы по возрастанию.
+        # В данном случае в качестве аргумента выступает массив значений функций
+        sorted_indices = np.argsort(fitness)
+
+        # Вычисляем количество особей, среди которых будет производиться отбор в новую популяцию
+        if self._truncation_threshold <= 1:
+            num_select = int(len(combined_population) * self._truncation_threshold)
+        else:
+            num_select = int(self._truncation_threshold)
+
+        # Гарантируем, что размер промежуточной популяции будет хотя бы 1, или равен размеру популяции
+        num_select = max(1, min(num_select, len(combined_population)))
+
+        # Выбираем только тех особей, которые находятся в первых num_select
+        selected_indices = sorted_indices[:num_select]
+
+        # Выбираем случайным образом новых особей с необходимыми индексами
+        new_population_indices = (np.random.choice(selected_indices, size=self._population_size, replace=True))
+        new_population = combined_population[new_population_indices]
+
+        return new_population
 
     def _check_convergence(self, population):
         std_x = np.std(population[:, 0])
@@ -94,22 +125,24 @@ class GeneticAlgorithm(QObject):
                 if not self._is_running:
                     break
 
-                new_population = []
-                while len(new_population) < self._population_size:
+                descendants = []
+                while len(descendants) < self._population_size:
                     parents = self._roulette_method(population)
                     if np.random.rand() < self._probability_of_recombination:
-                        descendants = self._intermediate_recombination(parents)
+                        new_descendants = self._intermediate_recombination(parents)
                     else:
-                        descendants = parents
+                        new_descendants = parents
 
-                    for descendant in descendants:
+                    for descendant in new_descendants:
                         if np.random.rand() < self._probability_of_mutation:
                             mutated_descendant = self._real_valued_mutation(descendant)
-                            new_population.append(mutated_descendant)
+                            descendants.append(mutated_descendant)
                         else:
-                            new_population.append(descendant)
+                            descendants.append(descendant)
 
-                population = np.array(new_population)
+                descendants = np.array(descendants[:self._population_size])
+
+                population = self._truncation_selection(population, descendants)
                 self.points.append(population.copy())
 
                 best_idx = np.argmin([self._function(x, y) for x, y in population])
@@ -232,3 +265,13 @@ class GeneticAlgorithm(QObject):
         if value is None:
             raise ValueError("Function cannot be None")
         self._function = value
+
+    @property
+    def truncation_threshold(self):
+        return self._truncation_threshold
+
+    @truncation_threshold.setter
+    def truncation_threshold(self, value):
+        if not isinstance(value, (int, float)) or value <= 0:
+            raise ValueError("Truncation threshold must be positive")
+        self._truncation_threshold = value

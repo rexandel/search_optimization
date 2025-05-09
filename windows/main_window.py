@@ -50,94 +50,16 @@ class MainWindow(QMainWindow):
         self.clearWorkLogButton.clicked.connect(self.clear_work_log)
         self.clearDotsButton.clicked.connect(self.clear_optimization_path)
 
+        self.truncationSelectionRadioButton.toggled.connect(self.on_truncation_selection_radio_button_clicked)
+        self.truncationSelectionLineEdit.setReadOnly(not self.truncationSelectionRadioButton.isChecked())
+
         # self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
         # self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
 
         self.setFocusPolicy(Qt.StrongFocus)
 
-    def _show_maximized(self):
-        self.setWindowState(Qt.WindowMaximized)
-        self.show()
-
-    def _center(self):
-        window_geometry = self.frameGeometry()
-        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
-        center_point = QApplication.desktop().screenGeometry(screen).center()
-        window_geometry.moveCenter(center_point)
-        self.move(window_geometry.topLeft())
-
-    def clear_optimization_path(self):
-        self.openGLWidget.update_optimization_path(np.array([]))
-
-    def clear_work_log(self):
-        self.workLogPlainTextEdit.clear()
-
-    def open_work_log_in_separate_window(self):
-        log_text = self.workLogPlainTextEdit.toPlainText()
-        self.work_log_window = WorkLogWindow(log_text)
-        self.work_log_window.show()
-
-    def clear_all_line_edits(self):
-        for line_edit in self.current_tab_line_edits:
-            line_edit.clear()
-
-    def update_current_tab_line_edits(self):
-        self.current_tab_line_edits.clear()
-        current_tab = self.tabWidget.currentWidget()
-        if current_tab:
-            line_edits = current_tab.findChildren(QLineEdit)
-            self.current_tab_line_edits = line_edits
-
-    def on_tab_changed(self, index):
-        self.update_current_tab_line_edits()
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            if self.startButton.isEnabled():
-                self.on_start_button_clicked()
-        else:
-            super().keyPressEvent(event)
-
-    @QtCore.pyqtSlot(str)
-    def append_log_message(self, message: str):
-        self.workLogPlainTextEdit.appendPlainText(message)
-
-    @QtCore.pyqtSlot(str)
-    def append_html_log_message(self, html: str):
-        cursor = self.workLogPlainTextEdit.textCursor()
-        cursor.movePosition(cursor.End)
-        cursor.insertHtml(html)
-        self.workLogPlainTextEdit.setTextCursor(cursor)
-        self.workLogPlainTextEdit.ensureCursorVisible()
-
-    def toggle_grid_visibility(self, state):
-        self.openGLWidget.grid_visible = bool(state)
-        self.openGLWidget.update()
-
-    def toggle_axes_visibility(self, state):
-        self.openGLWidget.axes_visible = bool(state)
-        self.openGLWidget.update()
-
-    def reset_view_to_default(self):
-        self.openGLWidget.restore_default_view()
-
-    def on_function_selected(self, index):
-        current_func = self.function_manager_helper.get_function_by_index(index)
-        self.openGLWidget.update_optimization_path(np.array([]))
-        if current_func:
-            self.function_manager_helper.set_current_function(index)
-            self.openGLWidget.clear_constraints()
-            self.openGLWidget.set_function(current_func['function'])
-
-            for constraint in current_func['constraints']:
-                self.openGLWidget.add_constraint(constraint['function'])
-
-            self.openGLWidget.build_objective_function_data()
-            self.statusbar.showMessage(f"Selected function: {current_func['name']}")
-
-    def show_function_manager_window(self):
-        function_manager_window = FunctionManagerWindow(self)
-        function_manager_window.exec_()
+    def on_truncation_selection_radio_button_clicked(self):
+        self.truncationSelectionLineEdit.setReadOnly(not self.truncationSelectionRadioButton.isChecked())
 
     def on_start_button_clicked(self):
         current_index = self.tabWidget.currentIndex()
@@ -287,7 +209,8 @@ class MainWindow(QMainWindow):
                 'number_of_generations': self.numberOfGenerationsLineEdit.text(),
                 'convergence_criterion': self.convergenceCriterionLineEdit.text(),
                 'probability_of_recombination': self.probabilityOfRecombinationLineEdit.text(),
-                'probability_of_mutation': self.probabilityOfMutationLineEdit.text()
+                'probability_of_mutation': self.probabilityOfMutationLineEdit.text(),
+                'truncation_threshold': self.truncationSelectionLineEdit.text()
             }
 
             try:
@@ -338,6 +261,16 @@ class MainWindow(QMainWindow):
                 self.statusbar.showMessage("Error: Probability of mutation  value must be floating-point number")
                 return
 
+            try:
+                truncation_threshold = float(data['truncation_threshold'])
+
+                if truncation_threshold < 0 or truncation_threshold > population_size:
+                    self.statusbar.showMessage("Error: Threshold Size value must be between 0 and size of population")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Probability of mutation  value must be floating-point number")
+                return
+
             self.workLogPlainTextEdit.clear()
             self.tabWidget.setEnabled(False)
             self.selectFunctionComboBox.setEnabled(False)
@@ -354,6 +287,7 @@ class MainWindow(QMainWindow):
                 'y_bounds': [-5, 5],
                 'probability_of_recombination': probability_of_recombination,
                 'probability_of_mutation': probability_of_mutation,
+                'truncation_threshold': truncation_threshold,
                 'function': self.function_manager_helper.get_current_function()['function']
             }
 
@@ -366,6 +300,90 @@ class MainWindow(QMainWindow):
             self.optimization_thread.start()
 
             self.statusbar.showMessage("Optimization started")
+
+    def _show_maximized(self):
+        self.setWindowState(Qt.WindowMaximized)
+        self.show()
+
+    def _center(self):
+        window_geometry = self.frameGeometry()
+        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
+        center_point = QApplication.desktop().screenGeometry(screen).center()
+        window_geometry.moveCenter(center_point)
+        self.move(window_geometry.topLeft())
+
+    def clear_optimization_path(self):
+        self.openGLWidget.update_optimization_path(np.array([]))
+
+    def clear_work_log(self):
+        self.workLogPlainTextEdit.clear()
+
+    def open_work_log_in_separate_window(self):
+        log_text = self.workLogPlainTextEdit.toPlainText()
+        self.work_log_window = WorkLogWindow(log_text)
+        self.work_log_window.show()
+
+    def clear_all_line_edits(self):
+        for line_edit in self.current_tab_line_edits:
+            line_edit.clear()
+
+    def update_current_tab_line_edits(self):
+        self.current_tab_line_edits.clear()
+        current_tab = self.tabWidget.currentWidget()
+        if current_tab:
+            line_edits = current_tab.findChildren(QLineEdit)
+            self.current_tab_line_edits = line_edits
+
+    def on_tab_changed(self, index):
+        self.update_current_tab_line_edits()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            if self.startButton.isEnabled():
+                self.on_start_button_clicked()
+        else:
+            super().keyPressEvent(event)
+
+    @QtCore.pyqtSlot(str)
+    def append_log_message(self, message: str):
+        self.workLogPlainTextEdit.appendPlainText(message)
+
+    @QtCore.pyqtSlot(str)
+    def append_html_log_message(self, html: str):
+        cursor = self.workLogPlainTextEdit.textCursor()
+        cursor.movePosition(cursor.End)
+        cursor.insertHtml(html)
+        self.workLogPlainTextEdit.setTextCursor(cursor)
+        self.workLogPlainTextEdit.ensureCursorVisible()
+
+    def toggle_grid_visibility(self, state):
+        self.openGLWidget.grid_visible = bool(state)
+        self.openGLWidget.update()
+
+    def toggle_axes_visibility(self, state):
+        self.openGLWidget.axes_visible = bool(state)
+        self.openGLWidget.update()
+
+    def reset_view_to_default(self):
+        self.openGLWidget.restore_default_view()
+
+    def on_function_selected(self, index):
+        current_func = self.function_manager_helper.get_function_by_index(index)
+        self.openGLWidget.update_optimization_path(np.array([]))
+        if current_func:
+            self.function_manager_helper.set_current_function(index)
+            self.openGLWidget.clear_constraints()
+            self.openGLWidget.set_function(current_func['function'])
+
+            for constraint in current_func['constraints']:
+                self.openGLWidget.add_constraint(constraint['function'])
+
+            self.openGLWidget.build_objective_function_data()
+            self.statusbar.showMessage(f"Selected function: {current_func['name']}")
+
+    def show_function_manager_window(self):
+        function_manager_window = FunctionManagerWindow(self)
+        function_manager_window.exec_()
 
     @QtCore.pyqtSlot()
     def on_optimization_finished(self):
