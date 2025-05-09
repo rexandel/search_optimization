@@ -10,6 +10,8 @@ from utils import LogEmitter, FunctionManagerHelper
 
 import numpy as np
 import threading
+import configparser
+import os
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -18,11 +20,13 @@ class MainWindow(QMainWindow):
         uic.loadUi('gui/ui/main.ui', self)
         self._show_maximized()
 
+        self.load_visualization_settings()
+
         self.log_emitter = LogEmitter()
         self.log_emitter.log_signal.connect(self.append_log_message)
         self.log_emitter.html_log_signal.connect(self.append_html_log_message)
 
-        self.function_manager_helper = FunctionManagerHelper('functions.json')
+        self.function_manager_helper = FunctionManagerHelper('resources/functions.json')
         self.function_manager_helper.populate_combo_box(self.selectFunctionComboBox)
         self.selectFunctionComboBox.currentIndexChanged.connect(self.on_function_selected)
 
@@ -60,6 +64,50 @@ class MainWindow(QMainWindow):
         # self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
 
         self.setFocusPolicy(Qt.StrongFocus)
+
+    def load_visualization_settings(self):
+        config = configparser.ConfigParser()
+        config_file = os.path.join('resources', 'config.ini')
+
+        if not os.path.exists(config_file):
+            self.statusbar.showMessage(f"Warning: {config_file} not found, using default settings")
+            return
+
+        try:
+            config.read(config_file)
+            if 'Visualization' not in config:
+                self.statusbar.showMessage("Error: 'Visualization' section not found in config.ini")
+                return
+
+            viz = config['Visualization']
+
+            try:
+                self.openGLWidget.set_grid_size_x(int(viz.get('grid_size_x')))
+            except ValueError:
+                self.statusbar.showMessage("Error: Invalid grid_size_x in config.ini")
+
+            try:
+                self.openGLWidget.set_grid_size_y(int(viz.get('grid_size_y')))
+            except ValueError:
+                self.statusbar.showMessage("Error: Invalid grid_size_y in config.ini")
+
+            try:
+                self.openGLWidget.set_grid_size_z(int(viz.get('grid_size_z')))
+            except ValueError:
+                self.statusbar.showMessage("Error: Invalid grid_size_z in config.ini")
+
+            try:
+                self.openGLWidget.set_resolution(int(viz.get('resolution')))
+            except ValueError:
+                self.statusbar.showMessage("Error: Invalid resolution in config.ini")
+
+            self.openGLWidget.set_grid_visible(viz.getboolean('grid_visible', True))
+            self.openGLWidget.set_axes_visible(viz.getboolean('axes_visible', True))
+            self.openGLWidget.set_axis_ticks_and_numbers_visible(viz.getboolean('axis_ticks_and_numbers_visible', True))
+
+            self.statusbar.showMessage("Visualization settings loaded successfully")
+        except Exception as e:
+            self.statusbar.showMessage(f"Error loading config.ini: {str(e)}")
 
     def truncation_selection_radio_button_toggled(self):
         self.truncationSelectionLineEdit.setEnabled(self.truncationSelectionRadioButton.isChecked())
