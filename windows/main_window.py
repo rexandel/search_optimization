@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt
 from windows import FunctionManagerWindow
 from windows.work_log_window import WorkLogWindow
 
-from optimization_methods import GradientDescent, LibrarySimplexMethod, MySimplexMethod
+from optimization_methods import GradientDescent, LibrarySimplexMethod, MySimplexMethod, GeneticAlgorithm
 from utils import LogEmitter, FunctionManagerHelper
 
 import numpy as np
@@ -27,6 +27,7 @@ class MainWindow(QMainWindow):
 
         self.gradient_descent = None
         self.simplex_method = None
+        self.genetic_algorithm = None
         self.optimization_thread = None
 
         if len(self.function_manager_helper.get_function_names()) > 0:
@@ -38,8 +39,8 @@ class MainWindow(QMainWindow):
         self.update_current_tab_line_edits()
         self.tabWidget.currentChanged.connect(self.on_tab_changed)
 
-        self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
-        self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
+        # self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
+        # self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
         self.returnButton.clicked.connect(self.reset_view_to_default)
         self.functionManagerButton.clicked.connect(self.show_function_manager_window)
         self.startButton.clicked.connect(self.on_start_button_clicked)
@@ -130,7 +131,6 @@ class MainWindow(QMainWindow):
         current_index = self.tabWidget.currentIndex()
 
         if current_index == 0:
-            self.openGLWidget.update_optimization_path(np.array([]))
             if len(self.function_manager_helper.get_current_function()['constraints']) != 0:
                 self.statusbar.showMessage("Attention: Selected function is not supported by GradientDescent class")
                 return
@@ -186,7 +186,9 @@ class MainWindow(QMainWindow):
             self.tabWidget.setEnabled(False)
             self.selectFunctionComboBox.setEnabled(False)
             self.startButton.setEnabled(False)
+            self.clearDotsButton.setEnabled(False)
             self.stopButton.setEnabled(True)
+            self.openGLWidget.update_optimization_path(np.array([]))
 
             params = {
                 'point': (x, y),
@@ -206,18 +208,10 @@ class MainWindow(QMainWindow):
 
             self.statusbar.showMessage("Optimization started")
         elif current_index == 1:
-            self.workLogPlainTextEdit.clear()
-            self.openGLWidget.update_optimization_path(np.array([]))
-
             if self.myMethodRadioButton.isChecked():
                 if len(self.function_manager_helper.get_current_function()['constraints']) < 3:
                     self.statusbar.showMessage("Attention: Selected function is not supported by MySimplexMethod class")
                     return
-
-                self.tabWidget.setEnabled(False)
-                self.selectFunctionComboBox.setEnabled(False)
-                self.startButton.setEnabled(False)
-                self.stopButton.setEnabled(True)
 
                 symbolic_result = self.function_manager_helper.to_symbolic_function(self.function_manager_helper.current_function_index)
 
@@ -228,6 +222,14 @@ class MainWindow(QMainWindow):
                         'variables': symbolic_result['variables'],
                         'max_iterations': 100
                     }
+
+                    self.workLogPlainTextEdit.clear()
+                    self.tabWidget.setEnabled(False)
+                    self.selectFunctionComboBox.setEnabled(False)
+                    self.startButton.setEnabled(False)
+                    self.clearDotsButton.setEnabled(False)
+                    self.stopButton.setEnabled(True)
+                    self.openGLWidget.update_optimization_path(np.array([]))
 
                     self.openGLWidget.set_connect_optimization_points(False)
                     self.simplex_method = MySimplexMethod(params, self.log_emitter)
@@ -242,15 +244,18 @@ class MainWindow(QMainWindow):
                     self.statusbar.showMessage(symbolic_result['error'])
 
             elif self.libraryMethodRadioButton.isChecked():
-                self.tabWidget.setEnabled(False)
-                self.selectFunctionComboBox.setEnabled(False)
-                self.startButton.setEnabled(False)
-                self.stopButton.setEnabled(True)
-
                 params = {
                     'function': self.function_manager_helper.get_current_function()['function'],
                     'constraints': self.function_manager_helper.get_current_function()['constraints']
                 }
+
+                self.workLogPlainTextEdit.clear()
+                self.tabWidget.setEnabled(False)
+                self.selectFunctionComboBox.setEnabled(False)
+                self.startButton.setEnabled(False)
+                self.clearDotsButton.setEnabled(False)
+                self.stopButton.setEnabled(True)
+                self.openGLWidget.update_optimization_path(np.array([]))
 
                 self.optimizer = LibrarySimplexMethod(params, self.log_emitter)
                 self.optimizer.run()
@@ -264,6 +269,91 @@ class MainWindow(QMainWindow):
                 self.optimization_thread.start()
 
                 self.statusbar.showMessage("Simplex method optimization started")
+        elif current_index == 2:
+            data = {
+                'population_size': self.populationSizeLineEdit.text(),
+                'number_of_generations': self.numberOfGenerationsLineEdit.text(),
+                'convergence_criterion': self.convergenceCriterionLineEdit.text(),
+                'probability_of_recombination': self.probabilityOfRecombinationLineEdit.text(),
+                'probability_of_mutation': self.probabilityOfMutationLineEdit.text()
+            }
+
+            try:
+                population_size = int(data['population_size'])
+                if population_size <= 0:
+                    self.statusbar.showMessage("Error: Population size must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Population size must be a positive number")
+                return
+
+            try:
+                number_of_generations = int(data['number_of_generations'])
+                if number_of_generations <= 0:
+                    self.statusbar.showMessage("Error: Number of generations must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Number of generations must be a positive integer")
+                return
+
+            try:
+                convergence_criterion = float(data['convergence_criterion'])
+
+                if not 0 < convergence_criterion < 1:
+                    self.statusbar.showMessage("Error: Convergence criterion value must be between 0 and 1")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Convergence criterion value must be floating-point number")
+                return
+
+            try:
+                probability_of_recombination = float(data['probability_of_recombination'])
+
+                if not 0 < probability_of_recombination < 1:
+                    self.statusbar.showMessage("Error: Probability of recombination value must be between 0 and 1")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Probability of recombination value must be floating-point number")
+                return
+
+            try:
+                probability_of_mutation = float(data['probability_of_mutation'])
+
+                if not 0 < probability_of_mutation < 1:
+                    self.statusbar.showMessage("Error: Probability of mutation value must be between 0 and 1")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Probability of mutation  value must be floating-point number")
+                return
+
+            self.workLogPlainTextEdit.clear()
+            self.tabWidget.setEnabled(False)
+            self.selectFunctionComboBox.setEnabled(False)
+            self.startButton.setEnabled(False)
+            self.clearDotsButton.setEnabled(False)
+            self.stopButton.setEnabled(True)
+            self.openGLWidget.update_optimization_path(np.array([]))
+
+            params = {
+                'population_size': population_size,
+                'max_generations': number_of_generations,
+                'std_threshold': convergence_criterion,
+                'x_bounds': [-5, 5],
+                'y_bounds': [-5, 5],
+                'probability_of_recombination': probability_of_recombination,
+                'probability_of_mutation': probability_of_mutation,
+                'function': self.function_manager_helper.get_current_function()['function']
+            }
+
+            self.openGLWidget.set_connect_optimization_points(False)
+            self.genetic_algorithm = GeneticAlgorithm(params, self.log_emitter)
+            self.genetic_algorithm.finished_signal.connect(self.on_optimization_finished)
+            self.genetic_algorithm.update_signal.connect(self.openGLWidget.update_optimization_path)
+
+            self.optimization_thread = threading.Thread(target=self.genetic_algorithm.run, daemon=True)
+            self.optimization_thread.start()
+
+            self.statusbar.showMessage("Optimization started")
 
 
     @QtCore.pyqtSlot()
@@ -278,12 +368,18 @@ class MainWindow(QMainWindow):
         if self.gradient_descent:
             self.gradient_descent.stop()
             self.stopButton.setEnabled(False)
+            self.clearDotsButton.setEnabled(True)
             self.startButton.setEnabled(True)
         elif self.simplex_method:
             self.simplex_method.stop()
             self.stopButton.setEnabled(False)
+            self.clearDotsButton.setEnabled(True)
             self.startButton.setEnabled(True)
-
+        elif self.genetic_algorithm:
+            self.genetic_algorithm.stop()
+            self.stopButton.setEnabled(False)
+            self.clearDotsButton.setEnabled(True)
+            self.startButton.setEnabled(True)
     # def view_function_graph(self):
     #     current_func = self.function_manager_helper.get_current_function()
     #
