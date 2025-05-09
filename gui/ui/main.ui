@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1700</width>
-    <height>1015</height>
+    <height>1041</height>
    </rect>
   </property>
   <property name="palette">
@@ -579,6 +579,32 @@ QTabBar::tab:selected {
                 </layout>
                </item>
                <item>
+                <layout class="QHBoxLayout" name="numberOfGenerationsHorizontalLayout" stretch="3,3">
+                 <property name="leftMargin">
+                  <number>5</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>5</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>5</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>5</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="numberOfGenerationsLabel">
+                   <property name="text">
+                    <string>Number Of Generations:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="numberOfGenerationsLineEdit"/>
+                 </item>
+                </layout>
+               </item>
+               <item>
                 <layout class="QHBoxLayout" name="convergenceCriterionHorizontalLayout" stretch="3,3">
                  <property name="leftMargin">
                   <number>5</number>
@@ -689,13 +715,13 @@ QTabBar::tab:selected {
                     <number>5</number>
                    </property>
                    <property name="topMargin">
-                    <number>5</number>
+                    <number>0</number>
                    </property>
                    <property name="rightMargin">
-                    <number>5</number>
+                    <number>0</number>
                    </property>
                    <property name="bottomMargin">
-                    <number>5</number>
+                    <number>0</number>
                    </property>
                    <item>
                     <widget class="QLabel" name="probabilityOfRecombinationLabel">
@@ -773,13 +799,13 @@ QTabBar::tab:selected {
                     <number>5</number>
                    </property>
                    <property name="topMargin">
-                    <number>5</number>
+                    <number>0</number>
                    </property>
                    <property name="rightMargin">
-                    <number>5</number>
+                    <number>0</number>
                    </property>
                    <property name="bottomMargin">
-                    <number>5</number>
+                    <number>0</number>
                    </property>
                    <item>
                     <widget class="QLabel" name="probabilityOfMutationLabel">
