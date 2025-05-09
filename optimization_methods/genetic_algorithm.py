@@ -22,10 +22,7 @@ class GeneticAlgorithm(QObject):
         self.points = []
         self.log_emitter = log_emitter
         self.initial_delay = 0.05
-        self.min_delay = 0.001
-
-    def _rosenbrock_function(self, x, y):
-        return self._function(x, y)
+        self.min_delay = 0.01
 
     def _initialize_population(self):
         population = np.zeros((self._population_size, 2))
@@ -35,7 +32,7 @@ class GeneticAlgorithm(QObject):
 
     def _roulette_method(self, population):
         population_size = len(population)
-        fitness = np.array([self._rosenbrock_function(x, y) for x, y in population])
+        fitness = np.array([self._function(x, y) for x, y in population])
         fitness = 1 / (fitness + 1e-10)
         total_fitness = np.sum(fitness)
 
@@ -115,9 +112,9 @@ class GeneticAlgorithm(QObject):
                 population = np.array(new_population)
                 self.points.append(population.copy())
 
-                best_idx = np.argmin([self._rosenbrock_function(x, y) for x, y in population])
+                best_idx = np.argmin([self._function(x, y) for x, y in population])
                 best_point = population[best_idx]
-                best_value = self._rosenbrock_function(best_point[0], best_point[1])
+                best_value = self._function(best_point[0], best_point[1])
 
                 message = (
                     f"Generation {generation + 1}:\n"
