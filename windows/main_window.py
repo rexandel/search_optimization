@@ -50,23 +50,29 @@ class MainWindow(QMainWindow):
         self.clearWorkLogButton.clicked.connect(self.clear_work_log)
         self.clearDotsButton.clicked.connect(self.clear_optimization_path)
 
-        self.truncationSelectionRadioButton.toggled.connect(self.on_truncation_selection_radio_button_clicked)
-        self.truncationSelectionLineEdit.setReadOnly(not self.truncationSelectionRadioButton.isChecked())
+        self.truncationSelectionRadioButton.toggled.connect(self.truncation_selection_radio_button_toggled)
+        self.truncationSelectionLineEdit.setEnabled(self.truncationSelectionRadioButton.isChecked())
+
+        self.bolzmanSelectionRadioButton.toggled.connect(self.bolzman_selection_radio_button_toggled)
+        self.bolzmanSelectionLineEdit.setEnabled(self.bolzmanSelectionRadioButton.isChecked())
 
         # self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
         # self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
 
         self.setFocusPolicy(Qt.StrongFocus)
 
-    def on_truncation_selection_radio_button_clicked(self):
-        self.truncationSelectionLineEdit.setReadOnly(not self.truncationSelectionRadioButton.isChecked())
+    def truncation_selection_radio_button_toggled(self):
+        self.truncationSelectionLineEdit.setEnabled(self.truncationSelectionRadioButton.isChecked())
+
+    def bolzman_selection_radio_button_toggled(self):
+        self.bolzmanSelectionLineEdit.setEnabled(self.bolzmanSelectionRadioButton.isChecked())
 
     def on_start_button_clicked(self):
         current_index = self.tabWidget.currentIndex()
 
         if current_index == 0:
             if len(self.function_manager_helper.get_current_function()['constraints']) != 0:
-                self.statusbar.showMessage("Attention: Selected function is not supported by GradientDescent class")
+                self.statusbar.showMessage("Attention: Selected function is not supported by gradient descent")
                 return
 
             data = {
@@ -144,7 +150,7 @@ class MainWindow(QMainWindow):
         elif current_index == 1:
             if self.myMethodRadioButton.isChecked():
                 if len(self.function_manager_helper.get_current_function()['constraints']) < 3:
-                    self.statusbar.showMessage("Attention: Selected function is not supported by MySimplexMethod class")
+                    self.statusbar.showMessage("Attention: Selected function is not supported by my simplex method")
                     return
 
                 symbolic_result = self.function_manager_helper.to_symbolic_function(self.function_manager_helper.current_function_index)
@@ -204,13 +210,23 @@ class MainWindow(QMainWindow):
 
                 self.statusbar.showMessage("Simplex method optimization started")
         elif current_index == 2:
+            if len(self.function_manager_helper.get_current_function()['constraints']) != 0:
+                self.statusbar.showMessage("Attention: Selected function is not supported by genetic algorithm")
+                return
+
+            truncation_threshold = None
+            bolzman_threshold = None
+
             data = {
                 'population_size': self.populationSizeLineEdit.text(),
                 'number_of_generations': self.numberOfGenerationsLineEdit.text(),
                 'convergence_criterion': self.convergenceCriterionLineEdit.text(),
                 'probability_of_recombination': self.probabilityOfRecombinationLineEdit.text(),
                 'probability_of_mutation': self.probabilityOfMutationLineEdit.text(),
-                'truncation_threshold': self.truncationSelectionLineEdit.text()
+                'truncation_threshold_flag': self.truncationSelectionRadioButton.isChecked(),
+                'truncation_threshold': self.truncationSelectionLineEdit.text(),
+                'bolzman_threshold_flag': self.bolzmanSelectionRadioButton.isChecked(),
+                'bolzman_threshold': self.bolzmanSelectionLineEdit.text()
             }
 
             try:
@@ -258,18 +274,43 @@ class MainWindow(QMainWindow):
                     self.statusbar.showMessage("Error: Probability of mutation value must be between 0 and 1")
                     return
             except ValueError:
-                self.statusbar.showMessage("Error: Probability of mutation  value must be floating-point number")
+                self.statusbar.showMessage("Error: Probability of mutation value must be floating-point number")
                 return
 
             try:
-                truncation_threshold = float(data['truncation_threshold'])
-
-                if truncation_threshold < 0 or truncation_threshold > population_size:
-                    self.statusbar.showMessage("Error: Threshold Size value must be between 0 and size of population")
-                    return
+                truncation_threshold_flag = bool(data['truncation_threshold_flag'])
             except ValueError:
-                self.statusbar.showMessage("Error: Probability of mutation  value must be floating-point number")
+                self.statusbar.showMessage("Unexpected error: Truncation threshold flag parsing is failed")
                 return
+
+            if truncation_threshold_flag:
+                try:
+                    truncation_threshold = float(data['truncation_threshold'])
+
+                    if truncation_threshold < 0 or truncation_threshold > population_size:
+                        self.statusbar.showMessage("Error: Threshold size value must be between 0 and size of population")
+                        return
+                except ValueError:
+                    self.statusbar.showMessage("Error: Threshold size value must be floating-point number")
+                    return
+
+            try:
+                bolzman_threshold_flag = bool(data['bolzman_threshold_flag'])
+            except ValueError:
+                self.statusbar.showMessage("Unexpected error: Bolzman threshold flag parsing is failed")
+                return
+
+            if bolzman_threshold_flag:
+                try:
+                    bolzman_threshold = float(data['bolzman_threshold'])
+
+                    if bolzman_threshold == 0:
+                        self.statusbar.showMessage(
+                            "Error: Temperature cannot be zero")
+                        return
+                except ValueError:
+                    self.statusbar.showMessage("Error: Temperature must be a number")
+                    return
 
             self.workLogPlainTextEdit.clear()
             self.tabWidget.setEnabled(False)
@@ -287,7 +328,10 @@ class MainWindow(QMainWindow):
                 'y_bounds': [-5, 5],
                 'probability_of_recombination': probability_of_recombination,
                 'probability_of_mutation': probability_of_mutation,
+                'truncation_threshold_flag': truncation_threshold_flag,
                 'truncation_threshold': truncation_threshold,
+                'bolzman_threshold_flag': bolzman_threshold_flag,
+                'bolzman_threshold': bolzman_threshold,
                 'function': self.function_manager_helper.get_current_function()['function']
             }
 

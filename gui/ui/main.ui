@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1692</width>
-    <height>1068</height>
+    <height>1038</height>
    </rect>
   </property>
   <property name="palette">
@@ -834,7 +834,7 @@ QTabBar::tab:selected {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QGroupBox" name="verticalGroupBox">
+                   <widget class="QGroupBox" name="selectingNewIndividualsMethodVerticalGroupBox">
                     <layout class="QVBoxLayout" name="verticalLayout_5">
                      <property name="leftMargin">
                       <number>5</number>
@@ -849,7 +849,7 @@ QTabBar::tab:selected {
                       <number>5</number>
                      </property>
                      <item>
-                      <layout class="QHBoxLayout" name="horizontalLayout_3">
+                      <layout class="QHBoxLayout" name="truncationSelectionHorizontalLayout" stretch="1,1">
                        <item>
                         <widget class="QRadioButton" name="truncationSelectionRadioButton">
                          <property name="text">
@@ -861,14 +861,14 @@ QTabBar::tab:selected {
                         </widget>
                        </item>
                        <item>
-                        <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,9">
+                        <layout class="QHBoxLayout" name="truncationSelectionGetValueHorizontalLayout" stretch="3,2">
                          <property name="leftMargin">
                           <number>5</number>
                          </property>
                          <item>
-                          <widget class="QLabel" name="label">
+                          <widget class="QLabel" name="truncationSelectionLabel">
                            <property name="text">
-                            <string>Threshold Size:</string>
+                            <string>Threshold:</string>
                            </property>
                           </widget>
                          </item>
@@ -880,18 +880,32 @@ QTabBar::tab:selected {
                       </layout>
                      </item>
                      <item>
-                      <widget class="QRadioButton" name="eliteSelectionRadioButton">
-                       <property name="text">
-                        <string>Elite Selection</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QRadioButton" name="ExclusionSelectionRadioButton">
-                       <property name="text">
-                        <string>Exclusion Selection</string>
-                       </property>
-                      </widget>
+                      <layout class="QHBoxLayout" name="bolzmanSelectionHorizontalLayout" stretch="1,1">
+                       <item>
+                        <widget class="QRadioButton" name="bolzmanSelectionRadioButton">
+                         <property name="text">
+                          <string>Bolzman Selection</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item>
+                        <layout class="QHBoxLayout" name="bolzmanSelectionValueHorizontalLayout" stretch="3,2">
+                         <property name="leftMargin">
+                          <number>5</number>
+                         </property>
+                         <item>
+                          <widget class="QLabel" name="bolzmanSelectionLabel">
+                           <property name="text">
+                            <string>Temperature:</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QLineEdit" name="bolzmanSelectionLineEdit"/>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
                      </item>
                     </layout>
                    </widget>

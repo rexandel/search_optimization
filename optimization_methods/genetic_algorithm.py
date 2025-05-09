@@ -1,7 +1,6 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 import numpy as np
 import time
-import uuid
 
 
 class GeneticAlgorithm(QObject):
@@ -18,7 +17,12 @@ class GeneticAlgorithm(QObject):
         self._probability_of_recombination = params_dict['probability_of_recombination']
         self._probability_of_mutation = params_dict['probability_of_mutation']
         self._function = params_dict['function']
-        self._truncation_threshold = params_dict.get('truncation_threshold', 0.5)
+
+        self._truncation_threshold = params_dict['truncation_threshold']
+        self._truncation_threshold_flag = params_dict['truncation_threshold_flag']
+
+        self._bolzman_threshold = params_dict['bolzman_threshold']
+        self._bolzman_threshold_flag = params_dict['bolzman_threshold_flag']
 
         self._is_running = False
         self.points = []
@@ -82,7 +86,6 @@ class GeneticAlgorithm(QObject):
 
     def _truncation_selection(self, population, descendants):
         combined_population = np.vstack((population, descendants))
-
         fitness = np.array([self._function(x, y) for x, y in combined_population])
 
         # Функция np.argsort() возвращает массив индексов, которые указывают,
@@ -108,6 +111,37 @@ class GeneticAlgorithm(QObject):
 
         return new_population
 
+    def _bolzman_selection(self, population, descendants):
+        combined_population = np.vstack((population, descendants))
+        population_size = len(combined_population)
+
+        fitness = np.array([self._function(x, y) for x, y in combined_population])
+
+        new_population = []
+        temperature = self._bolzman_threshold
+
+        while len(new_population) < self._population_size:
+            # Случайно выбираем двух особей i и j
+            i, j = np.random.choice(population_size, size=2, replace=False)
+
+            # Вычисляем вероятность p по формуле Болцмана
+            delta_function = fitness[i] - fitness[j]
+            probability = 1 / (1 + np.exp(delta_function / temperature))
+
+            # Генерируем случайное число r из (0, 1)
+            random_value = np.random.random()
+
+            # Выбираем особь: i, если p > r, иначе j
+            if probability > random_value:
+                selected_index = i
+            else:
+                selected_index = j
+
+            new_population.append(combined_population[selected_index])
+
+        new_population = np.array(new_population)
+        return new_population
+
     def _check_convergence(self, population):
         std_x = np.std(population[:, 0])
         std_y = np.std(population[:, 1])
@@ -116,6 +150,19 @@ class GeneticAlgorithm(QObject):
     def run(self):
         self._is_running = True
         self.log_emitter.log_signal.emit("🔹 Genetic Algorithm started...")
+
+        if self._truncation_threshold_flag:
+            message = (
+                f"Selection method is Truncation Selection\n"
+                f"------------------------------------\n"
+            )
+            self.log_emitter.log_signal.emit(message)
+        elif self._bolzman_threshold_flag:
+            message = (
+                f"Selection method is Bolzman Selection\n"
+                f"------------------------------------\n"
+            )
+            self.log_emitter.log_signal.emit(message)
 
         try:
             population = self._initialize_population()
@@ -142,7 +189,11 @@ class GeneticAlgorithm(QObject):
 
                 descendants = np.array(descendants[:self._population_size])
 
-                population = self._truncation_selection(population, descendants)
+                if self._truncation_threshold_flag:
+                    population = self._truncation_selection(population, descendants)
+                elif self._bolzman_threshold_flag:
+                    population = self._bolzman_selection(population, descendants)
+
                 self.points.append(population.copy())
 
                 best_idx = np.argmin([self._function(x, y) for x, y in population])
