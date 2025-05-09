@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1700</width>
-    <height>1041</height>
+    <height>1050</height>
    </rect>
   </property>
   <property name="palette">
@@ -631,288 +631,293 @@ QTabBar::tab:selected {
                 </layout>
                </item>
                <item>
-                <layout class="QVBoxLayout" name="selectingParentsMethodVerticalLayout">
-                 <property name="leftMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>5</number>
-                 </property>
-                 <item>
-                  <widget class="QLabel" name="selectingParentsMethodLabel">
-                   <property name="text">
-                    <string>Selecting Parents Method</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QGroupBox" name="selectingParentsMethodsVerticalGroupBox">
-                   <layout class="QVBoxLayout" name="selectingMethodsVerticalLayout">
-                    <property name="leftMargin">
-                     <number>5</number>
+                <widget class="QGroupBox" name="selectingParentsMethodGroupBox">
+                 <layout class="QVBoxLayout" name="selectingParentsMethodVerticalLayout">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="selectingParentsMethodLabel">
+                    <property name="text">
+                     <string>Selecting Parents Method</string>
                     </property>
-                    <property name="topMargin">
-                     <number>5</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>5</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>5</number>
-                    </property>
-                    <item>
-                     <widget class="QRadioButton" name="rouletteMethodRadioButton">
-                      <property name="text">
-                       <string>Roulette Method</string>
-                      </property>
-                      <property name="checked">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QRadioButton" name="tournamentMethodRadioButton">
-                      <property name="text">
-                       <string>Tournament Method</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QVBoxLayout" name="recombinationSettingsVerticalLayout">
-                 <property name="leftMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>5</number>
-                 </property>
-                 <item>
-                  <widget class="QLabel" name="recombinationSettingsLabel">
-                   <property name="text">
-                    <string>Recombination Settings</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <layout class="QHBoxLayout" name="probabilityOfRecombinationHorizontalLayout" stretch="3,3">
-                   <property name="leftMargin">
-                    <number>5</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <widget class="QLabel" name="probabilityOfRecombinationLabel">
-                     <property name="text">
-                      <string>Probability Of Recombination:</string>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="selectingParentsMethodsVerticalGroupBox">
+                    <layout class="QVBoxLayout" name="selectingMethodsVerticalLayout">
+                     <property name="leftMargin">
+                      <number>5</number>
                      </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QLineEdit" name="probabilityOfRecombinationLineEdit"/>
-                   </item>
-                  </layout>
-                 </item>
-                 <item>
-                  <widget class="QGroupBox" name="recombinationMethodVerticalGroupBox">
-                   <layout class="QVBoxLayout" name="verticalLayout_3">
-                    <property name="leftMargin">
-                     <number>5</number>
-                    </property>
-                    <property name="topMargin">
-                     <number>5</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>5</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>5</number>
-                    </property>
-                    <item>
-                     <widget class="QRadioButton" name="intermediateRecombinationRadioButton">
-                      <property name="text">
-                       <string>Intermediate Recombination</string>
-                      </property>
-                      <property name="checked">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QRadioButton" name="lineRecombinationRadioButton">
-                      <property name="text">
-                       <string>Line Recombination</string>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <layout class="QVBoxLayout" name="mutationSettingsVerticalLayout">
-                 <property name="leftMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>5</number>
-                 </property>
-                 <item>
-                  <widget class="QLabel" name="mutationSettingsLabel">
-                   <property name="text">
-                    <string>Mutation Settigns</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <layout class="QHBoxLayout" name="probabilityOfMutationHorizontalLayout" stretch="3,3">
-                   <property name="leftMargin">
-                    <number>5</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <widget class="QLabel" name="probabilityOfMutationLabel">
-                     <property name="text">
-                      <string>Probability Of Mutation:</string>
+                     <property name="topMargin">
+                      <number>5</number>
                      </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QLineEdit" name="probabilityOfMutationLineEdit"/>
-                   </item>
-                  </layout>
-                 </item>
-                 <item>
-                  <widget class="QGroupBox" name="mutationMethodVerticalGroupBox">
-                   <layout class="QVBoxLayout" name="verticalLayout_4">
-                    <property name="leftMargin">
-                     <number>5</number>
-                    </property>
-                    <property name="topMargin">
-                     <number>5</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>5</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>5</number>
-                    </property>
-                    <item>
-                     <widget class="QRadioButton" name="realValuedMutationRadioButton">
-                      <property name="text">
-                       <string>Real Valued Mutation</string>
-                      </property>
-                      <property name="checked">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                </layout>
+                     <property name="rightMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>5</number>
+                     </property>
+                     <item>
+                      <widget class="QRadioButton" name="rouletteMethodRadioButton">
+                       <property name="text">
+                        <string>Roulette Method</string>
+                       </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QRadioButton" name="tournamentMethodRadioButton">
+                       <property name="text">
+                        <string>Tournament Method</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
                </item>
                <item>
-                <layout class="QVBoxLayout" name="selectingNewIndividualsVerticalLayout">
-                 <property name="leftMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>5</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>5</number>
-                 </property>
-                 <item>
-                  <widget class="QLabel" name="selectingNewIndividualsLabel">
-                   <property name="text">
-                    <string>Selecting New Individuals Method</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QGroupBox" name="verticalGroupBox">
-                   <layout class="QVBoxLayout" name="verticalLayout_5">
+                <widget class="QGroupBox" name="recombinationSettingsGroupBox">
+                 <layout class="QVBoxLayout" name="recombinationSettingsVerticalLayout">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="recombinationSettingsLabel">
+                    <property name="text">
+                     <string>Recombination Settings</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <layout class="QHBoxLayout" name="probabilityOfRecombinationHorizontalLayout" stretch="3,3">
                     <property name="leftMargin">
                      <number>5</number>
                     </property>
                     <property name="topMargin">
-                     <number>5</number>
+                     <number>0</number>
                     </property>
                     <property name="rightMargin">
-                     <number>5</number>
+                     <number>0</number>
                     </property>
                     <property name="bottomMargin">
-                     <number>5</number>
+                     <number>0</number>
                     </property>
                     <item>
-                     <widget class="QRadioButton" name="truncationSelectionRadioButton">
+                     <widget class="QLabel" name="probabilityOfRecombinationLabel">
                       <property name="text">
-                       <string>Truncation Selection</string>
-                      </property>
-                      <property name="checked">
-                       <bool>true</bool>
+                       <string>Probability Of Recombination:</string>
                       </property>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QRadioButton" name="eliteSelectionRadioButton">
-                      <property name="text">
-                       <string>Elite Selection</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QRadioButton" name="ExclusionSelectionRadioButton">
-                      <property name="text">
-                       <string>Exclusion Selection</string>
-                      </property>
-                     </widget>
+                     <widget class="QLineEdit" name="probabilityOfRecombinationLineEdit"/>
                     </item>
                    </layout>
-                  </widget>
-                 </item>
-                </layout>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="recombinationMethodVerticalGroupBox">
+                    <layout class="QVBoxLayout" name="verticalLayout_3">
+                     <property name="leftMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>5</number>
+                     </property>
+                     <item>
+                      <widget class="QRadioButton" name="intermediateRecombinationRadioButton">
+                       <property name="text">
+                        <string>Intermediate Recombination</string>
+                       </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QRadioButton" name="lineRecombinationRadioButton">
+                       <property name="text">
+                        <string>Line Recombination</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="mutationSettingsGroupBox">
+                 <layout class="QVBoxLayout" name="mutationSettingsVerticalLayout">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="mutationSettingsLabel">
+                    <property name="text">
+                     <string>Mutation Settigns</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <layout class="QHBoxLayout" name="probabilityOfMutationHorizontalLayout" stretch="3,3">
+                    <property name="leftMargin">
+                     <number>5</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="probabilityOfMutationLabel">
+                      <property name="text">
+                       <string>Probability Of Mutation:</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLineEdit" name="probabilityOfMutationLineEdit"/>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="mutationMethodVerticalGroupBox">
+                    <layout class="QVBoxLayout" name="verticalLayout_4">
+                     <property name="leftMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>5</number>
+                     </property>
+                     <item>
+                      <widget class="QLabel" name="label">
+                       <property name="text">
+                        <string>Only Real Valued Mutation</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="selectingNewIndividualsGroupBox">
+                 <layout class="QVBoxLayout" name="selectingNewIndividualsVerticalLayout">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="selectingNewIndividualsLabel">
+                    <property name="text">
+                     <string>Selecting New Individuals Method</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="verticalGroupBox">
+                    <layout class="QVBoxLayout" name="verticalLayout_5">
+                     <property name="leftMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>5</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>5</number>
+                     </property>
+                     <item>
+                      <widget class="QRadioButton" name="truncationSelectionRadioButton">
+                       <property name="text">
+                        <string>Truncation Selection</string>
+                       </property>
+                       <property name="checked">
+                        <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QRadioButton" name="eliteSelectionRadioButton">
+                       <property name="text">
+                        <string>Elite Selection</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QRadioButton" name="ExclusionSelectionRadioButton">
+                       <property name="text">
+                        <string>Exclusion Selection</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
                </item>
               </layout>
              </widget>
