@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1700</width>
-    <height>1050</height>
+    <width>1691</width>
+    <height>1068</height>
    </rect>
   </property>
   <property name="palette">
@@ -165,23 +165,7 @@ QTabBar::tab:selected {
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="2" column="1">
-     <spacer name="bottomVerticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>10</width>
-        <height>5</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="1" column="1">
+    <item row="0" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,1">
       <item>
        <widget class="Visualization3DWidget" name="openGLWidget"/>
@@ -653,8 +637,8 @@ QTabBar::tab:selected {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QGroupBox" name="selectingParentsMethodsVerticalGroupBox">
-                    <layout class="QVBoxLayout" name="selectingMethodsVerticalLayout">
+                   <widget class="QGroupBox" name="selectingParentsMethodHorizontalGroupBox">
+                    <layout class="QHBoxLayout" name="horizontalLayout_2">
                      <property name="leftMargin">
                       <number>5</number>
                      </property>
@@ -823,31 +807,6 @@ QTabBar::tab:selected {
                      <widget class="QLineEdit" name="probabilityOfMutationLineEdit"/>
                     </item>
                    </layout>
-                  </item>
-                  <item>
-                   <widget class="QGroupBox" name="mutationMethodVerticalGroupBox">
-                    <layout class="QVBoxLayout" name="verticalLayout_4">
-                     <property name="leftMargin">
-                      <number>5</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>5</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>5</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>5</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="label">
-                       <property name="text">
-                        <string>Only Real Valued Mutation</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </widget>
                   </item>
                  </layout>
                 </widget>
@@ -1026,16 +985,22 @@ QTabBar::tab:selected {
                 <number>10</number>
                </property>
                <property name="topMargin">
-                <number>5</number>
+                <number>0</number>
                </property>
                <property name="rightMargin">
                 <number>10</number>
                </property>
                <property name="bottomMargin">
-                <number>5</number>
+                <number>0</number>
                </property>
                <item>
                 <widget class="QPushButton" name="startButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
                  <property name="font">
                   <font>
                    <pointsize>10</pointsize>
@@ -1048,6 +1013,17 @@ QTabBar::tab:selected {
                </item>
                <item>
                 <widget class="QPushButton" name="clearDotsButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <pointsize>10</pointsize>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Clear Dots</string>
                  </property>
@@ -1057,6 +1033,12 @@ QTabBar::tab:selected {
                 <widget class="QPushButton" name="stopButton">
                  <property name="enabled">
                   <bool>false</bool>
+                 </property>
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
                  </property>
                  <property name="font">
                   <font>
@@ -1076,13 +1058,13 @@ QTabBar::tab:selected {
                 <number>10</number>
                </property>
                <property name="topMargin">
-                <number>5</number>
+                <number>0</number>
                </property>
                <property name="rightMargin">
                 <number>10</number>
                </property>
                <property name="bottomMargin">
-                <number>5</number>
+                <number>0</number>
                </property>
                <item>
                 <widget class="QPushButton" name="returnButton">
@@ -1163,6 +1145,11 @@ QTabBar::tab:selected {
                </item>
                <item>
                 <widget class="QPushButton" name="clearWorkLogButton">
+                 <property name="font">
+                  <font>
+                   <pointsize>10</pointsize>
+                  </font>
+                 </property>
                  <property name="text">
                   <string>Clear Work Log</string>
                  </property>
@@ -1179,54 +1166,6 @@ QTabBar::tab:selected {
       </item>
      </layout>
     </item>
-    <item row="0" column="1">
-     <spacer name="upperVerticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>10</width>
-        <height>5</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="1" column="0">
-     <spacer name="rightHorizontalSpacer">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>5</width>
-        <height>10</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="1" column="2">
-     <spacer name="leftHorizontalSpacer">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>5</width>
-        <height>10</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -1234,8 +1173,8 @@ QTabBar::tab:selected {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1700</width>
-     <height>21</height>
+     <width>1691</width>
+     <height>26</height>
     </rect>
    </property>
   </widget>
