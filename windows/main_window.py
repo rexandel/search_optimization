@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
 
             self.statusbar.showMessage("Optimization started")
         elif current_index == 1:
-            if self.myMethodRadioButton.isChecked():
+            if self.ourMethodRadioButton.isChecked():
                 if len(self.function_manager_helper.get_current_function()['constraints']) < 3:
                     self.statusbar.showMessage("Attention: Selected function is not supported by my simplex method")
                     return
@@ -221,8 +221,13 @@ class MainWindow(QMainWindow):
                 'population_size': self.populationSizeLineEdit.text(),
                 'number_of_generations': self.numberOfGenerationsLineEdit.text(),
                 'convergence_criterion': self.convergenceCriterionLineEdit.text(),
+
                 'probability_of_recombination': self.probabilityOfRecombinationLineEdit.text(),
+                'intermediate_recombination_flag': self.intermediateRecombinationRadioButton.isChecked(),
+                'line_recombination_flag': self.lineRecombinationRadioButton.isChecked(),
+
                 'probability_of_mutation': self.probabilityOfMutationLineEdit.text(),
+
                 'truncation_threshold_flag': self.truncationSelectionRadioButton.isChecked(),
                 'truncation_threshold': self.truncationSelectionLineEdit.text(),
                 'bolzman_threshold_flag': self.bolzmanSelectionRadioButton.isChecked(),
@@ -278,6 +283,18 @@ class MainWindow(QMainWindow):
                 return
 
             try:
+                intermediate_recombination_flag = bool(data['intermediate_recombination_flag'])
+            except ValueError:
+                self.statusbar.showMessage("Unexpected error: Intermediate recombination flag parsing is failed")
+                return
+
+            try:
+                line_recombination_flag = bool(data['line_recombination_flag'])
+            except ValueError:
+                self.statusbar.showMessage("Unexpected error: Line recombination flag parsing is failed")
+                return
+
+            try:
                 truncation_threshold_flag = bool(data['truncation_threshold_flag'])
             except ValueError:
                 self.statusbar.showMessage("Unexpected error: Truncation threshold flag parsing is failed")
@@ -327,6 +344,8 @@ class MainWindow(QMainWindow):
                 'x_bounds': [-5, 5],
                 'y_bounds': [-5, 5],
                 'probability_of_recombination': probability_of_recombination,
+                'intermediate_recombination_flag': intermediate_recombination_flag,
+                'line_recombination_flag': line_recombination_flag,
                 'probability_of_mutation': probability_of_mutation,
                 'truncation_threshold_flag': truncation_threshold_flag,
                 'truncation_threshold': truncation_threshold,

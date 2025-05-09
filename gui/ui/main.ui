@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1692</width>
-    <height>1038</height>
+    <height>1054</height>
    </rect>
   </property>
   <property name="palette">
@@ -485,14 +485,14 @@ QTabBar::tab:selected {
              <widget class="QGroupBox" name="secondTabGridGroupBox">
               <layout class="QVBoxLayout" name="verticalLayout_2">
                <item>
-                <widget class="QRadioButton" name="myMethodRadioButton">
+                <widget class="QRadioButton" name="ourMethodRadioButton">
                  <property name="font">
                   <font>
                    <pointsize>10</pointsize>
                   </font>
                  </property>
                  <property name="text">
-                  <string>Solve With My Simplex Method</string>
+                  <string>Solve With Our Simplex Method</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>

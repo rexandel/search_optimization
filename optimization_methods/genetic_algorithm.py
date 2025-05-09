@@ -18,6 +18,9 @@ class GeneticAlgorithm(QObject):
         self._probability_of_mutation = params_dict['probability_of_mutation']
         self._function = params_dict['function']
 
+        self._intermediate_recombination_flag = params_dict['intermediate_recombination_flag']
+        self._line_recombination_flag = params_dict['line_recombination_flag']
+
         self._truncation_threshold = params_dict['truncation_threshold']
         self._truncation_threshold_flag = params_dict['truncation_threshold_flag']
 
@@ -61,6 +64,22 @@ class GeneticAlgorithm(QObject):
         for gen_index in range(num_genes):
             alpha_for_first_parent = np.random.uniform(-coefficient, 1 + coefficient)
             alpha_for_second_parent = np.random.uniform(-coefficient, 1 + coefficient)
+            first_descendant[gen_index] = first_parent[gen_index] + alpha_for_first_parent * (
+                    second_parent[gen_index] - first_parent[gen_index])
+            second_descendant[gen_index] = first_parent[gen_index] + alpha_for_second_parent * (
+                    second_parent[gen_index] - first_parent[gen_index])
+        return np.array([first_descendant, second_descendant])
+
+    def _line_recombination(self, parents, coefficient=0.25):
+        first_parent, second_parent = parents
+        num_genes = len(first_parent)
+        first_descendant = np.zeros(num_genes)
+        second_descendant = np.zeros(num_genes)
+
+        alpha_for_first_parent = np.random.uniform(-coefficient, 1 + coefficient)
+        alpha_for_second_parent = np.random.uniform(-coefficient, 1 + coefficient)
+
+        for gen_index in range(num_genes):
             first_descendant[gen_index] = first_parent[gen_index] + alpha_for_first_parent * (
                     second_parent[gen_index] - first_parent[gen_index])
             second_descendant[gen_index] = first_parent[gen_index] + alpha_for_second_parent * (
@@ -151,18 +170,32 @@ class GeneticAlgorithm(QObject):
         self._is_running = True
         self.log_emitter.log_signal.emit("🔹 Genetic Algorithm started...")
 
+        self.log_emitter.log_signal.emit("------------------------------------\n")
+        self.log_emitter.log_signal.emit(" Selected parameters:")
+
+        if self._intermediate_recombination_flag:
+            message = (
+                f"  Recombination method is Intermediate Recombination"
+            )
+            self.log_emitter.log_signal.emit(message)
+        elif self._line_recombination_flag:
+            message = (
+                f"  Recombination method is Line Recombination"
+            )
+            self.log_emitter.log_signal.emit(message)
+
         if self._truncation_threshold_flag:
             message = (
-                f"Selection method is Truncation Selection\n"
-                f"------------------------------------\n"
+                f"  Selection method is Truncation Selection"
             )
             self.log_emitter.log_signal.emit(message)
         elif self._bolzman_threshold_flag:
             message = (
-                f"Selection method is Bolzman Selection\n"
-                f"------------------------------------\n"
+                f"  Selection method is Bolzman Selection"
             )
             self.log_emitter.log_signal.emit(message)
+
+        self.log_emitter.log_signal.emit("------------------------------------\n")
 
         try:
             population = self._initialize_population()
