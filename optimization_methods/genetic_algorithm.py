@@ -208,8 +208,12 @@ class GeneticAlgorithm(QObject):
                 descendants = []
                 while len(descendants) < self._population_size:
                     parents = self._roulette_method(population)
+
                     if np.random.rand() < self._probability_of_recombination:
-                        new_descendants = self._intermediate_recombination(parents)
+                        if self._intermediate_recombination_flag:
+                            new_descendants = self._intermediate_recombination(parents)
+                        elif self._line_recombination_flag:
+                            new_descendants = self._line_recombination(parents)
                     else:
                         new_descendants = parents
 
