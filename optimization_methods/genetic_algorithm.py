@@ -188,8 +188,30 @@ class GeneticAlgorithm(QObject):
         return new_population
 
     def _check_convergence(self, population):
+        """
+        Проверяет, достиг ли генетический алгоритм сходимости на основе стандартного отклонения
+        координат особей в популяции.
+
+        Сходимость считается достигнутой, если стандартное отклонение (дисперсия) значений
+        x- и y-координат всех особей в популяции становится меньше заданного порога
+        (`self._std_threshold`). Это указывает на то, что особи в популяции сгруппированы
+        достаточно близко друг к другу, что часто свидетельствует о нахождении оптимального
+        решения или локального минимума целевой функции.
+        """
+        # Вычисляем стандартное отклонение x-координат всех особей в популяции.
+        # population[:, 0] — это массив x-координат (первая колонка массива population).
+        # np.std вычисляет выборочное стандартное отклонение (с ddof=1 по умолчанию в NumPy).
         std_x = np.std(population[:, 0])
+
+        # Вычисляем стандартное отклонение y-координат всех особей в популяции.
+        # population[:, 1] — это массив y-координат (вторая колонка массива population).
         std_y = np.std(population[:, 1])
+
+        # Проверяем, являются ли оба стандартных отклонения (по x и y) меньше порога
+        # сходимости, заданного в self._std_threshold.
+        # Возвращаем True, если оба условия выполняются (логическое И), иначе False.
+        # Это означает, что популяция считается сошедшейся, если разброс координат
+        # по обеим осям достаточно мал.
         return std_x < self._std_threshold and std_y < self._std_threshold
 
     def run(self):
@@ -197,40 +219,31 @@ class GeneticAlgorithm(QObject):
         self.log_emitter.log_signal.emit("🔹 Genetic Algorithm started...")
 
         self.log_emitter.log_signal.emit("------------------------------------\n")
-        self.log_emitter.log_signal.emit(" Selected parameters:")
+        self.log_emitter.log_signal.emit("Selected parameters:")
+        self.log_emitter.log_signal.emit(f"  Population size: {self._population_size}")
+        self.log_emitter.log_signal.emit(f"  Max generations: {self._max_generations}")
+        self.log_emitter.log_signal.emit(f"  Standard deviation threshold: {self._std_threshold:.6f}")
+        self.log_emitter.log_signal.emit(f"  X bounds: ({self._x_bounds[0]:.6f}, {self._x_bounds[1]:.6f})")
+        self.log_emitter.log_signal.emit(f"  Y bounds: ({self._y_bounds[0]:.6f}, {self._y_bounds[1]:.6f})")
+        self.log_emitter.log_signal.emit(f"  Recombination probability: {self._probability_of_recombination:.6f}")
+        self.log_emitter.log_signal.emit(f"  Mutation probability: {self._probability_of_mutation:.6f}")
 
         if self._roulette_method_flag:
-            message = (
-                f"  Parents selection method is Roulette Method"
-            )
-            self.log_emitter.log_signal.emit(message)
+            self.log_emitter.log_signal.emit("  Parents selection method: Roulette Method")
         elif self._tournament_method_flag:
-            message = (
-                f"  Parents selection method is Tournament Method"
-            )
-            self.log_emitter.log_signal.emit(message)
+            self.log_emitter.log_signal.emit(f"  Parents selection method: Tournament Method")
 
         if self._intermediate_recombination_flag:
-            message = (
-                f"  Recombination method is Intermediate Recombination"
-            )
-            self.log_emitter.log_signal.emit(message)
+            self.log_emitter.log_signal.emit("  Recombination method: Intermediate Recombination")
         elif self._line_recombination_flag:
-            message = (
-                f"  Recombination method is Line Recombination"
-            )
-            self.log_emitter.log_signal.emit(message)
+            self.log_emitter.log_signal.emit("  Recombination method: Line Recombination")
 
         if self._truncation_threshold_flag:
-            message = (
-                f"  Selection method is Truncation Selection"
-            )
-            self.log_emitter.log_signal.emit(message)
+            self.log_emitter.log_signal.emit(
+                f"  Selection method: Truncation Selection (threshold: {self._truncation_threshold:.6f})")
         elif self._bolzman_threshold_flag:
-            message = (
-                f"  Selection method is Bolzman Selection"
-            )
-            self.log_emitter.log_signal.emit(message)
+            self.log_emitter.log_signal.emit(
+                f"  Selection method: Bolzman Selection (temperature: {self._bolzman_threshold:.6f})")
 
         self.log_emitter.log_signal.emit("------------------------------------\n")
 
@@ -244,7 +257,6 @@ class GeneticAlgorithm(QObject):
 
                 descendants = []
                 while len(descendants) < self._population_size:
-
                     if self._roulette_method_flag:
                         parents = self._roulette_method(population)
                     elif self._tournament_method_flag:
@@ -274,16 +286,29 @@ class GeneticAlgorithm(QObject):
 
                 self.points.append(population.copy())
 
-                best_idx = np.argmin([self._function(x, y) for x, y in population])
+                # Вычисление значений целевой функции для текущей популяции
+                fitness = np.array([self._function(x, y) for x, y in population])
+                # Сортировка индексов по значениям функции (по возрастанию, так как минимизируем)
+                sorted_indices = np.argsort(fitness)
+                # Выбор 10% лучших особей (округляем вверх до ближайшего целого)
+                num_top = max(1, int(np.ceil(self._population_size * 0.1)))
+                top_indices = sorted_indices[:num_top]
+
+                # Формирование сообщения о лучших особях
+                best_idx = top_indices[0]  # Индекс лучшей особи
                 best_point = population[best_idx]
-                best_value = self._function(best_point[0], best_point[1])
+                best_value = fitness[best_idx]
 
                 message = (
                     f"Generation {generation + 1}:\n"
                     f"📍 Best Point: ({best_point[0]:.6f}, {best_point[1]:.6f})\n"
                     f"📉 Best Function value: {best_value:.6f}\n"
-                    f"------------------------------------\n"
+                    f"Top {num_top} individuals (10%):\n"
                 )
+                for idx in top_indices:
+                    message += f"  Individual: ({population[idx][0]:.6f}, {population[idx][1]:.6f}), "
+                    message += f"Function value: {fitness[idx]:.6f}\n"
+                message += "------------------------------------\n"
                 self.log_emitter.log_signal.emit(message)
 
                 if self._check_convergence(population):

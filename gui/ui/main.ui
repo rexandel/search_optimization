@@ -726,19 +726,19 @@ QTabBar::tab:selected {
                    <widget class="QGroupBox" name="recombinationMethodHorizontalGroupBox">
                     <layout class="QHBoxLayout" name="horizontalLayout_3">
                      <item>
-                      <widget class="QRadioButton" name="lineRecombinationRadioButton">
-                       <property name="text">
-                        <string>Line Recombination</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
                       <widget class="QRadioButton" name="intermediateRecombinationRadioButton">
                        <property name="text">
                         <string>Intermediate Recombination</string>
                        </property>
                        <property name="checked">
                         <bool>true</bool>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QRadioButton" name="lineRecombinationRadioButton">
+                       <property name="text">
+                        <string>Line Recombination</string>
                        </property>
                       </widget>
                      </item>
