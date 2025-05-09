@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1692</width>
+    <width>1759</width>
     <height>1054</height>
    </rect>
   </property>
@@ -723,20 +723,15 @@ QTabBar::tab:selected {
                    </layout>
                   </item>
                   <item>
-                   <widget class="QGroupBox" name="recombinationMethodVerticalGroupBox">
-                    <layout class="QVBoxLayout" name="verticalLayout_3">
-                     <property name="leftMargin">
-                      <number>5</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>5</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>5</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>5</number>
-                     </property>
+                   <widget class="QGroupBox" name="recombinationMethodHorizontalGroupBox">
+                    <layout class="QHBoxLayout" name="horizontalLayout_3">
+                     <item>
+                      <widget class="QRadioButton" name="lineRecombinationRadioButton">
+                       <property name="text">
+                        <string>Line Recombination</string>
+                       </property>
+                      </widget>
+                     </item>
                      <item>
                       <widget class="QRadioButton" name="intermediateRecombinationRadioButton">
                        <property name="text">
@@ -744,13 +739,6 @@ QTabBar::tab:selected {
                        </property>
                        <property name="checked">
                         <bool>true</bool>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QRadioButton" name="lineRecombinationRadioButton">
-                       <property name="text">
-                        <string>Line Recombination</string>
                        </property>
                       </widget>
                      </item>
@@ -1208,7 +1196,7 @@ QTabBar::tab:selected {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1692</width>
+     <width>1759</width>
      <height>26</height>
     </rect>
    </property>

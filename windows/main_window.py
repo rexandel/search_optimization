@@ -222,6 +222,9 @@ class MainWindow(QMainWindow):
                 'number_of_generations': self.numberOfGenerationsLineEdit.text(),
                 'convergence_criterion': self.convergenceCriterionLineEdit.text(),
 
+                'roulette_method_flag': self.rouletteMethodRadioButton.isChecked(),
+                'tournament_method_flag': self.tournamentMethodRadioButton.isChecked(),
+
                 'probability_of_recombination': self.probabilityOfRecombinationLineEdit.text(),
                 'intermediate_recombination_flag': self.intermediateRecombinationRadioButton.isChecked(),
                 'line_recombination_flag': self.lineRecombinationRadioButton.isChecked(),
@@ -260,6 +263,18 @@ class MainWindow(QMainWindow):
                     return
             except ValueError:
                 self.statusbar.showMessage("Error: Convergence criterion value must be floating-point number")
+                return
+
+            try:
+                roulette_method_flag = bool(data['roulette_method_flag'])
+            except ValueError:
+                self.statusbar.showMessage("Unexpected error: Roulette method flag parsing is failed")
+                return
+
+            try:
+                tournament_method_flag = bool(data['tournament_method_flag'])
+            except ValueError:
+                self.statusbar.showMessage("Unexpected error: Tournament method flag parsing is failed")
                 return
 
             try:
@@ -343,6 +358,8 @@ class MainWindow(QMainWindow):
                 'std_threshold': convergence_criterion,
                 'x_bounds': [-5, 5],
                 'y_bounds': [-5, 5],
+                'roulette_method_flag': roulette_method_flag,
+                'tournament_method_flag': tournament_method_flag,
                 'probability_of_recombination': probability_of_recombination,
                 'intermediate_recombination_flag': intermediate_recombination_flag,
                 'line_recombination_flag': line_recombination_flag,

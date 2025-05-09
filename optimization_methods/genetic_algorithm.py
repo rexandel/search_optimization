@@ -18,6 +18,9 @@ class GeneticAlgorithm(QObject):
         self._probability_of_mutation = params_dict['probability_of_mutation']
         self._function = params_dict['function']
 
+        self._roulette_method_flag = params_dict['roulette_method_flag']
+        self._tournament_method_flag = params_dict['tournament_method_flag']
+
         self._intermediate_recombination_flag = params_dict['intermediate_recombination_flag']
         self._line_recombination_flag = params_dict['line_recombination_flag']
 
@@ -53,6 +56,29 @@ class GeneticAlgorithm(QObject):
         probabilities = np.nan_to_num(probabilities, nan=0.0)
         parent_indices = np.random.choice(population_size, size=2, p=probabilities)
         parents = population[parent_indices]
+        return parents
+
+    def _tournament_method(self, population, tournament_size=2):
+        population_size = len(population)
+        intermediate_pool = []
+
+        # Выполняем N турниров для формирования промежуточного массива
+        for _ in range(population_size):
+            # Случайно выбираем t особей для турнира
+            tournament_indices = np.random.choice(population_size, size=tournament_size, replace=False)
+            # Вычисляем значения целевой функции для выбранных особей
+            tournament_fitness = np.array([self._function(population[idx][0], population[idx][1])
+                                           for idx in tournament_indices])
+            # Находим индекс лучшей особи (с минимальным значением функции)
+            best_idx = tournament_indices[np.argmin(tournament_fitness)]
+            # Добавляем лучшую особь в промежуточный массив
+            intermediate_pool.append(population[best_idx])
+
+        # Преобразуем промежуточный массив в numpy массив
+        intermediate_pool = np.array(intermediate_pool)
+        # Случайно выбираем двух родителей из промежуточного массива
+        parent_indices = np.random.choice(population_size, size=2, replace=False)
+        parents = intermediate_pool[parent_indices]
         return parents
 
     def _intermediate_recombination(self, parents, coefficient=0.25):
@@ -173,6 +199,17 @@ class GeneticAlgorithm(QObject):
         self.log_emitter.log_signal.emit("------------------------------------\n")
         self.log_emitter.log_signal.emit(" Selected parameters:")
 
+        if self._roulette_method_flag:
+            message = (
+                f"  Parents selection method is Roulette Method"
+            )
+            self.log_emitter.log_signal.emit(message)
+        elif self._tournament_method_flag:
+            message = (
+                f"  Parents selection method is Tournament Method"
+            )
+            self.log_emitter.log_signal.emit(message)
+
         if self._intermediate_recombination_flag:
             message = (
                 f"  Recombination method is Intermediate Recombination"
@@ -207,7 +244,11 @@ class GeneticAlgorithm(QObject):
 
                 descendants = []
                 while len(descendants) < self._population_size:
-                    parents = self._roulette_method(population)
+
+                    if self._roulette_method_flag:
+                        parents = self._roulette_method(population)
+                    elif self._tournament_method_flag:
+                        parents = self._tournament_method(population)
 
                     if np.random.rand() < self._probability_of_recombination:
                         if self._intermediate_recombination_flag:
@@ -363,3 +404,83 @@ class GeneticAlgorithm(QObject):
         if not isinstance(value, (int, float)) or value <= 0:
             raise ValueError("Truncation threshold must be positive")
         self._truncation_threshold = value
+
+    @property
+    def bolzman_threshold(self):
+        return self._bolzman_threshold
+
+    @bolzman_threshold.setter
+    def bolzman_threshold(self, value):
+        if not isinstance(value, (int, float)) or value <= 0:
+            raise ValueError("Bolzman threshold must be positive")
+        self._bolzman_threshold = value
+
+    @property
+    def tournament_size(self):
+        return self._tournament_size
+
+    @tournament_size.setter
+    def tournament_size(self, value):
+        if not isinstance(value, int) or value < 2 or value > self._population_size:
+            raise ValueError("Tournament size must be an integer >= 2 and <= population size")
+        self._tournament_size = value
+
+    @property
+    def roulette_method_flag(self):
+        return self._roulette_method_flag
+
+    @roulette_method_flag.setter
+    def roulette_method_flag(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("Roulette method flag must be a boolean")
+        self._roulette_method_flag = value
+
+    @property
+    def tournament_method_flag(self):
+        return self._tournament_method_flag
+
+    @tournament_method_flag.setter
+    def tournament_method_flag(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("Tournament method flag must be a boolean")
+        self._tournament_method_flag = value
+
+    @property
+    def intermediate_recombination_flag(self):
+        return self._intermediate_recombination_flag
+
+    @intermediate_recombination_flag.setter
+    def intermediate_recombination_flag(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("Intermediate recombination flag must be a boolean")
+        self._intermediate_recombination_flag = value
+
+    @property
+    def line_recombination_flag(self):
+        return self._line_recombination_flag
+
+    @line_recombination_flag.setter
+    def line_recombination_flag(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("Line recombination flag must be a boolean")
+        self._line_recombination_flag = value
+
+    @property
+    def truncation_threshold_flag(self):
+        return self._truncation_threshold_flag
+
+    @truncation_threshold_flag.setter
+    def truncation_threshold_flag(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("Truncation threshold flag must be a boolean")
+        self._truncation_threshold_flag = value
+
+    @property
+    def bolzman_threshold_flag(self):
+        return self._bolzman_threshold_flag
+
+    @bolzman_threshold_flag.setter
+    def bolzman_threshold_flag(self, value):
+        if not isinstance(value, bool):
+            raise ValueError("Bolzman threshold flag must be a boolean")
+        self._bolzman_threshold_flag = value
