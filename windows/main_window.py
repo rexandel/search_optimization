@@ -2,8 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QLineEdit, QApplication
 from PyQt5 import uic, QtCore
 from PyQt5.QtCore import Qt
 
-from windows import FunctionManagerWindow
-from windows.work_log_window import WorkLogWindow
+from windows import FunctionManagerWindow, WorkLogWindow, SettingsWindow
 
 from optimization_methods import GradientDescent, LibrarySimplexMethod, MySimplexMethod, GeneticAlgorithm
 from utils import LogEmitter, FunctionManagerHelper
@@ -53,6 +52,7 @@ class MainWindow(QMainWindow):
         self.viewInSeparateWindowButton.clicked.connect(self.open_work_log_in_separate_window)
         self.clearWorkLogButton.clicked.connect(self.clear_work_log)
         self.clearDotsButton.clicked.connect(self.clear_optimization_path)
+        self.settingsPushButton.clicked.connect(self.show_settings_window)
 
         self.truncationSelectionRadioButton.toggled.connect(self.truncation_selection_radio_button_toggled)
         self.truncationSelectionLineEdit.setEnabled(self.truncationSelectionRadioButton.isChecked())
@@ -64,6 +64,11 @@ class MainWindow(QMainWindow):
         # self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
 
         self.setFocusPolicy(Qt.StrongFocus)
+
+    def show_settings_window(self):
+        settings_window = SettingsWindow(self)
+        settings_window.accepted.connect(self.load_visualization_settings)
+        settings_window.exec_()
 
     def load_visualization_settings(self):
         config = configparser.ConfigParser()
@@ -404,8 +409,8 @@ class MainWindow(QMainWindow):
                 'population_size': population_size,
                 'max_generations': number_of_generations,
                 'std_threshold': convergence_criterion,
-                'x_bounds': [-5, 5],
-                'y_bounds': [-5, 5],
+                'x_bounds': self.openGLWidget.get_x_axis_range(),
+                'y_bounds': self.openGLWidget.get_y_axis_range(),
                 'roulette_method_flag': roulette_method_flag,
                 'tournament_method_flag': tournament_method_flag,
                 'probability_of_recombination': probability_of_recombination,
