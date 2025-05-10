@@ -33,7 +33,7 @@ class GeneticAlgorithm(QObject):
         self._is_running = False
         self.points = []
         self.log_emitter = log_emitter
-        self.initial_delay = 0.1
+        self.initial_delay = 0.3
         self.min_delay = 0.01
 
     def _initialize_population(self):

@@ -299,14 +299,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="closePushButton">
+      <widget class="QPushButton" name="cancelPushButton">
        <property name="font">
         <font>
          <pointsize>10</pointsize>
         </font>
        </property>
        <property name="text">
-        <string>Close</string>
+        <string>Cancel</string>
        </property>
       </widget>
      </item>

@@ -14,13 +14,15 @@ class SettingsWindow(QDialog):
         self.load_settings()
 
         self.savePushButton.clicked.connect(self.save_settings)
-        self.closePushButton.clicked.connect(self.close_window)
+        self.cancelPushButton.clicked.connect(self.close_window)
         self.axesVisibleCheckBox.toggled.connect(self.change_state_axis_tisks_numbers)
 
     def change_state_axis_tisks_numbers(self):
         if self.axesVisibleCheckBox.isChecked():
-            self.axisTisksNumbersCheckBox.setChecked(False)
             self.axisTisksNumbersCheckBox.setEnabled(True)
+        else:
+            self.axisTisksNumbersCheckBox.setChecked(False)
+            self.axisTisksNumbersCheckBox.setEnabled(False)
 
     def load_settings(self):
         if not os.path.exists(self.config_file):
