@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 
-class GradientDescent(QObject):
+class GradientDescentMethod(QObject):
     finished_signal = pyqtSignal()
     update_signal = pyqtSignal(np.ndarray)
 

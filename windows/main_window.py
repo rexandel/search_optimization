@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 
 from windows import FunctionManagerWindow, WorkLogWindow, SettingsWindow
 
-from optimization_methods import GradientDescent, LibrarySimplexMethod, MySimplexMethod, GeneticAlgorithm
+from optimization_methods import GradientDescentMethod, LibrarySimplexMethod, MySimplexMethod, GeneticAlgorithm
 from utils import LogEmitter, FunctionManagerHelper
 
 import numpy as np
@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
             }
 
             self.openGLWidget.set_connect_optimization_points(True)
-            self.gradient_descent = GradientDescent(params, self.log_emitter)
+            self.gradient_descent = GradientDescentMethod(params, self.log_emitter)
             self.gradient_descent.finished_signal.connect(self.on_optimization_finished)
             self.gradient_descent.update_signal.connect(self.openGLWidget.update_optimization_path)
 
