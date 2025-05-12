@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 
 from windows import FunctionManagerWindow, WorkLogWindow, SettingsWindow
 
-from optimization_methods import GradientDescentMethod, LibrarySimplexMethod, MySimplexMethod, GeneticAlgorithm
+from optimization_methods import GradientDescentMethod, LibrarySimplexMethod, MySimplexMethod, GeneticAlgorithm, ParticleSwarmMethod
 from utils import LogEmitter, FunctionManagerHelper
 
 import numpy as np
@@ -32,6 +32,7 @@ class MainWindow(QMainWindow):
         self.gradient_descent = None
         self.simplex_method = None
         self.genetic_algorithm = None
+        self.particle_swarm_algorithm = None
         self.optimization_thread = None
 
         if len(self.function_manager_helper.get_function_names()) > 0:
@@ -433,6 +434,119 @@ class MainWindow(QMainWindow):
             self.optimization_thread.start()
 
             self.statusbar.showMessage("Optimization started")
+        elif current_index == 3:
+            if len(self.function_manager_helper.get_current_function()['constraints']) != 0:
+                self.statusbar.showMessage(
+                    "Attention: Selected function is not supported by particle swarm optimization")
+                return
+
+            data = {
+                'number_of_particles': self.numberOfParticlesLineEdit.text(),
+                'number_of_iterations': self.numberOfIterationsLineEdit.text(),
+                'cognitive_coefficient': self.cognitiveCoefficientLineEdit.text(),
+                'social_coefficient': self.socialCoefficientLineEdit.text(),
+                'inertial_weight_flag': self.inertialWeightCheckBox.isChecked(),
+                'inertial_weight': self.inertialWeightLineEdit.text(),
+                'normalization_flag': self.normalizationCheckBox.isChecked(),
+                'normalization_coefficient': self.normalizationLineEdit.text()
+            }
+
+            try:
+                number_of_particles = int(data['number_of_particles'])
+                if number_of_particles <= 0:
+                    self.statusbar.showMessage("Error: Number of particles must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Number of particles must be a positive integer")
+                return
+
+            try:
+                number_of_iterations = int(data['number_of_iterations'])
+                if number_of_iterations <= 0:
+                    self.statusbar.showMessage("Error: Number of iterations must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Number of iterations must be a positive integer")
+                return
+
+            try:
+                cognitive_coefficient = float(data['cognitive_coefficient'])
+                if cognitive_coefficient <= 0:
+                    self.statusbar.showMessage("Error: Cognitive coefficient must be a positive number")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Cognitive coefficient must be a floating-point number")
+                return
+
+            try:
+                social_coefficient = float(data['social_coefficient'])
+                if social_coefficient <= 0:
+                    self.statusbar.showMessage("Error: Social coefficient must be a positive number")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Social coefficient must be a floating-point number")
+                return
+
+            inertial_weight = None
+            try:
+                inertial_weight_flag = bool(data['inertial_weight_flag'])
+                if inertial_weight_flag:
+                    inertial_weight = float(data['inertial_weight'])
+                    if not 0 < inertial_weight < 1:
+                        self.statusbar.showMessage("Error: Inertial weight must be between 0 and 1 (exclusive)")
+                        return
+            except ValueError:
+                self.statusbar.showMessage("Error: Inertial weight must be a floating-point number")
+                return
+
+            normalization_coefficient = None
+            try:
+                normalization_flag = bool(data['normalization_flag'])
+                if normalization_flag:
+                    if cognitive_coefficient + social_coefficient <= 4:
+                        self.statusbar.showMessage(
+                            "Error: Sum of cognitive and social coefficients must be greater than 4 when normalization is enabled")
+                        return
+                    normalization_coefficient = float(data['normalization_coefficient'])
+                    if not 0 < normalization_coefficient < 1:
+                        self.statusbar.showMessage(
+                            "Error: Normalization coefficient must be between 0 and 1 (exclusive)")
+                        return
+            except ValueError:
+                self.statusbar.showMessage("Error: Normalization coefficient must be a floating-point number")
+                return
+
+            self.workLogPlainTextEdit.clear()
+            self.tabWidget.setEnabled(False)
+            self.selectFunctionComboBox.setEnabled(False)
+            self.startButton.setEnabled(False)
+            self.clearDotsButton.setEnabled(False)
+            self.stopButton.setEnabled(True)
+            self.openGLWidget.update_optimization_path(np.array([]))
+
+            params = {
+                'number_of_particles': number_of_particles,
+                'max_iterations': number_of_iterations,
+                'cognitive_coefficient': cognitive_coefficient,
+                'social_coefficient': social_coefficient,
+                'inertial_weight_flag': inertial_weight_flag,
+                'inertial_weight': inertial_weight,
+                'normalization_flag': normalization_flag,
+                'normalization_coefficient': normalization_coefficient,
+                'x_bounds': self.openGLWidget.get_x_axis_range(),
+                'y_bounds': self.openGLWidget.get_y_axis_range(),
+                'function': self.function_manager_helper.get_current_function()['function']
+            }
+
+            self.openGLWidget.set_connect_optimization_points(False)
+            self.particle_swarm_algorithm = ParticleSwarmMethod(params, self.log_emitter)
+            self.particle_swarm_algorithm.finished_signal.connect(self.on_optimization_finished)
+            self.particle_swarm_algorithm.update_signal.connect(self.openGLWidget.update_optimization_path)
+
+            self.optimization_thread = threading.Thread(target=self.particle_swarm_algorithm.run, daemon=True)
+            self.optimization_thread.start()
+
+            self.statusbar.showMessage("Optimization started")
 
     def _show_maximized(self):
         self.setWindowState(Qt.WindowMaximized)
@@ -540,6 +654,11 @@ class MainWindow(QMainWindow):
             self.startButton.setEnabled(True)
         elif self.genetic_algorithm:
             self.genetic_algorithm.stop()
+            self.stopButton.setEnabled(False)
+            self.clearDotsButton.setEnabled(True)
+            self.startButton.setEnabled(True)
+        elif self.particle_swarm_algorithm:
+            self.particle_swarm_algorithm.stop()
             self.stopButton.setEnabled(False)
             self.clearDotsButton.setEnabled(True)
             self.startButton.setEnabled(True)

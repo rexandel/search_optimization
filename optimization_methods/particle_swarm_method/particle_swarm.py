@@ -2,7 +2,7 @@ import numpy as np
 import time
 from PyQt5.QtCore import QObject, pyqtSignal
 from .particle import Particle
-
+from math import sqrt
 
 class ParticleSwarmMethod(QObject):
     finished_signal = pyqtSignal()
@@ -12,10 +12,16 @@ class ParticleSwarmMethod(QObject):
         super().__init__()
         self._number_of_particles = params_dict['number_of_particles']
         self._max_iterations = params_dict['max_iterations']
-        self._inertial_weight = params_dict['inertial_weight']
-        self._inertial_weight_flag = params_dict['inertial_weight_flag']
+
         self._cognitive_coefficient = params_dict['cognitive_coefficient']
         self._social_coefficient = params_dict['social_coefficient']
+
+        self._inertial_weight = params_dict['inertial_weight']
+        self._inertial_weight_flag = params_dict['inertial_weight_flag']
+
+        self._normalization_flag = params_dict['normalization_flag']
+        self._normalization_coefficient = params_dict['normalization_coefficient']
+
         self._x_bounds = params_dict['x_bounds']
         self._y_bounds = params_dict['y_bounds']
         self._function = params_dict['function']
@@ -42,7 +48,7 @@ class ParticleSwarmMethod(QObject):
         self.find_best_position()
 
     def find_best_position(self):
-        for particle in self._swarm[1:]:
+        for particle in self._swarm:
             if particle.best_local_fitness < self._best_global_fitness:
                 self._best_global_fitness = particle.best_local_fitness
                 self._best_global_position = particle.best_local_position.copy()
@@ -55,10 +61,18 @@ class ParticleSwarmMethod(QObject):
         self.log_emitter.log_signal.emit("Selected parameters:")
         self.log_emitter.log_signal.emit(f"  Number of particles: {self._number_of_particles}")
         self.log_emitter.log_signal.emit(f"  Max iterations: {self._max_iterations}")
-        self.log_emitter.log_signal.emit(f"  Inertial weight: {self._inertial_weight:.6f}")
+        if self._inertial_weight_flag and self._inertial_weight is not None:
+            self.log_emitter.log_signal.emit(f"  Inertial weight: {self._inertial_weight:.6f}")
+        elif self._inertial_weight_flag:
+            self.log_emitter.log_signal.emit("  Inertial weight: 0.9 (default)")
         self.log_emitter.log_signal.emit(f"  Inertial weight flag: {self._inertial_weight_flag}")
         self.log_emitter.log_signal.emit(f"  Cognitive coefficient: {self._cognitive_coefficient:.6f}")
         self.log_emitter.log_signal.emit(f"  Social coefficient: {self._social_coefficient:.6f}")
+        if self._normalization_flag and self._normalization_coefficient is not None:
+            self.log_emitter.log_signal.emit(f"  Normalization coefficient: {self._normalization_coefficient:.6f}")
+        elif self._normalization_flag:
+            self.log_emitter.log_signal.emit("  Normalization coefficient: 1.0 (default)")
+        self.log_emitter.log_signal.emit(f"  Normalization flag: {self._normalization_flag}")
         self.log_emitter.log_signal.emit(f"  X bounds: ({self._x_bounds[0]:.6f}, {self._x_bounds[1]:.6f})")
         self.log_emitter.log_signal.emit(f"  Y bounds: ({self._y_bounds[0]:.6f}, {self._y_bounds[1]:.6f})")
         self.log_emitter.log_signal.emit("------------------------------------")
@@ -71,7 +85,7 @@ class ParticleSwarmMethod(QObject):
             # PSO parameters
             c1 = self._cognitive_coefficient
             c2 = self._social_coefficient
-            w = self._inertial_weight
+            w = self._inertial_weight if self._inertial_weight is not None else 1.0  # Default inertial weight
 
             for iteration in range(self._max_iterations):
                 if not self._is_running:
@@ -89,6 +103,13 @@ class ParticleSwarmMethod(QObject):
                         particle.velocity = w * particle.velocity + cognitive + social
                     else:
                         particle.velocity = particle.velocity + cognitive + social
+
+                    if self._normalization_flag:
+                        c = c1 + c2
+                        X = (2 * (
+                            self._normalization_coefficient if self._normalization_coefficient is not None else 1.0)) / (
+                                abs(2 - c - sqrt(c ** 2 - 4 * c)))
+                        particle.velocity *= X
 
                     # Restrict velocity to prevent excessive movements
                     max_vx = 0.1 * (self._x_bounds[1] - self._x_bounds[0])
@@ -113,11 +134,19 @@ class ParticleSwarmMethod(QObject):
 
                 current_points = np.array([particle.position.copy() for particle in self._swarm])
 
+                # Sort particles by current fitness and select top 10%
+                num_top_particles = max(1, int(self._number_of_particles * 0.1))
+                sorted_particles = sorted(self._swarm, key=lambda p: p.fitness)[:num_top_particles]
+                top_particles_info = "\n".join(
+                    f"  Particle {i + 1}: Position ({p.position[0]:.6f}, {p.position[1]:.6f}), Fitness: {p.fitness:.6f}"
+                    for i, p in enumerate(sorted_particles)
+                )
+
                 message = (
                     f"Iteration {iteration + 1}:\n"
                     f"📍 Best Global Position: ({self._best_global_position[0]:.6f}, {self._best_global_position[1]:.6f})\n"
                     f"📉 Best Global Fitness: {self._best_global_fitness:.6f}\n"
-                    f"🔄 Inertial Weight: {w:.6f}\n"
+                    f"Top {num_top_particles} Particles (10%):\n{top_particles_info}\n"
                     f"------------------------------------"
                 )
                 self.log_emitter.log_signal.emit(message)
@@ -146,6 +175,14 @@ class ParticleSwarmMethod(QObject):
         self.log_emitter.log_signal.emit("⏹ Particle Swarm Optimization stopped by user")
 
     # Getters
+    @property
+    def normalization_flag(self):
+        return self._normalization_flag
+
+    @property
+    def normalization_coefficient(self):
+        return self._normalization_coefficient
+
     @property
     def max_iterations(self):
         return self._max_iterations
@@ -237,8 +274,6 @@ class ParticleSwarmMethod(QObject):
 
     @inertial_weight.setter
     def inertial_weight(self, value):
-        if value is None or value <= 0:
-            raise ValueError("Inertial weight must be positive")
         self._inertial_weight = value
 
     @inertial_weight_flag.setter
@@ -246,6 +281,14 @@ class ParticleSwarmMethod(QObject):
         if value is None:
             raise ValueError("Inertial weight flag cannot be None")
         self._inertial_weight_flag = value
+
+    @normalization_coefficient.setter
+    def normalization_coefficient(self, value):
+        self._normalization_coefficient = value
+
+    @normalization_flag.setter
+    def normalization_flag(self, value):
+        self._normalization_flag = value
 
     @cognitive_coefficient.setter
     def cognitive_coefficient(self, value):
