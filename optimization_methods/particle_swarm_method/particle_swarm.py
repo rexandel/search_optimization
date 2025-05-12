@@ -26,6 +26,10 @@ class ParticleSwarmMethod(QObject):
         self._y_bounds = params_dict['y_bounds']
         self._function = params_dict['function']
 
+        self._convergence_threshold = 0.3
+        self._convergence_percentage = 0.6
+        self._convergence_stable_iterations = 5
+
         self._is_running = False
         self.log_emitter = log_emitter
         self.initial_delay = 0.3
@@ -53,6 +57,45 @@ class ParticleSwarmMethod(QObject):
                 self._best_global_fitness = particle.best_local_fitness
                 self._best_global_position = particle.best_local_position.copy()
 
+    def check_convergence(self):
+        """
+        Проверяет, достиг ли рой частиц конвергенции на основе заданного порога близости.
+        Конвергенция считается достигнутой, если достаточный процент частиц находится
+        в пределах заданного расстояния от лучшей глобальной позиции.
+        """
+        # Проверяем, существует ли лучшая глобальная позиция.
+        # Если она не определена (например, на начальном этапе), возвращаем False,
+        # так как конвергенция невозможна без точки отсчёта.
+        if self._best_global_position is None:
+            return False
+
+        # Инициализируем счётчик частиц, которые находятся в пределах порога конвергенции.
+        # Этот счётчик будет увеличиваться для каждой частицы, удовлетворяющей условию.
+        within_threshold = 0
+
+        # Перебираем все частицы в рое, чтобы оценить их расстояние до лучшей глобальной позиции.
+        for particle in self._swarm:
+            # Вычисляем евклидово расстояние между текущей позицией частицы и лучшей
+            # глобальной позицией. Метод np.linalg.norm вычисляет норму вектора разности
+            # (то есть расстояние в двумерном пространстве).
+            distance = np.linalg.norm(particle.position - self._best_global_position)
+
+            # Проверяем, находится ли частица в пределах порога конвергенции
+            # (заданного параметром convergence_threshold).
+            # Если расстояние меньше или равно порогу, увеличиваем счётчик.
+            if distance <= self._convergence_threshold:
+                within_threshold += 1
+
+        # Вычисляем долю частиц, которые находятся в пределах порога.
+        # Делим количество частиц в зоне конвергенции на общее количество частиц в рое.
+        percentage_within = within_threshold / self._number_of_particles
+
+        # Проверяем, достигла ли доля частиц в зоне конвергенции заданного процента
+        # (convergence_percentage, например, 0.9 для 90%).
+        # Возвращаем True, если условие выполнено (конвергенция достигнута),
+        # или False, если недостаточно частиц находятся вблизи лучшей позиции.
+        return percentage_within >= self._convergence_percentage
+
     def run(self):
         self._is_running = True
         self.log_emitter.log_signal.emit("🔹 Particle Swarm Optimization started...")
@@ -75,6 +118,9 @@ class ParticleSwarmMethod(QObject):
         self.log_emitter.log_signal.emit(f"  Normalization flag: {self._normalization_flag}")
         self.log_emitter.log_signal.emit(f"  X bounds: ({self._x_bounds[0]:.6f}, {self._x_bounds[1]:.6f})")
         self.log_emitter.log_signal.emit(f"  Y bounds: ({self._y_bounds[0]:.6f}, {self._y_bounds[1]:.6f})")
+        self.log_emitter.log_signal.emit(f"  Convergence threshold: {self._convergence_threshold:.6f}")
+        self.log_emitter.log_signal.emit(f"  Convergence percentage: {self._convergence_percentage * 100:.1f}%")
+        self.log_emitter.log_signal.emit(f"  Convergence stable iterations: {self._convergence_stable_iterations}")
         self.log_emitter.log_signal.emit("------------------------------------")
 
         try:
@@ -87,11 +133,12 @@ class ParticleSwarmMethod(QObject):
             c2 = self._social_coefficient
             w = self._inertial_weight if self._inertial_weight is not None else 1.0  # Default inertial weight
 
+            # Convergence tracking
+            consecutive_converged_iterations = 0
+
             for iteration in range(self._max_iterations):
                 if not self._is_running:
                     break
-
-                # w = self._inertial_weight * (1 - iteration / self._max_iterations)
 
                 for particle in self._swarm:
                     r1 = np.random.random(2)
@@ -133,6 +180,20 @@ class ParticleSwarmMethod(QObject):
                     self.find_best_position()
 
                 current_points = np.array([particle.position.copy() for particle in self._swarm])
+
+                # Check for convergence
+                if self.check_convergence():
+                    consecutive_converged_iterations += 1
+                    self.log_emitter.log_signal.emit(
+                        f"Convergence detected for {consecutive_converged_iterations}/{self._convergence_stable_iterations} iterations"
+                    )
+                    if consecutive_converged_iterations >= self._convergence_stable_iterations:
+                        self.log_emitter.log_signal.emit(
+                            f"🎉 Swarm converged after {iteration + 1} iterations!"
+                        )
+                        break
+                else:
+                    consecutive_converged_iterations = 0
 
                 # Sort particles by current fitness and select top 10%
                 num_top_particles = max(1, int(self._number_of_particles * 0.1))

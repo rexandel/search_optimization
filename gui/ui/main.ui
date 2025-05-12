@@ -949,7 +949,11 @@ QTabBar::tab:selected {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLineEdit" name="numberOfParticlesLineEdit"/>
+                   <widget class="QLineEdit" name="numberOfParticlesLineEdit">
+                    <property name="text">
+                     <string>100</string>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </widget>
@@ -977,7 +981,11 @@ QTabBar::tab:selected {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLineEdit" name="numberOfIterationsLineEdit"/>
+                   <widget class="QLineEdit" name="numberOfIterationsLineEdit">
+                    <property name="text">
+                     <string>20</string>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </widget>
@@ -1005,7 +1013,11 @@ QTabBar::tab:selected {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLineEdit" name="cognitiveCoefficientLineEdit"/>
+                   <widget class="QLineEdit" name="cognitiveCoefficientLineEdit">
+                    <property name="text">
+                     <string>2</string>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </widget>
@@ -1033,7 +1045,11 @@ QTabBar::tab:selected {
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLineEdit" name="socialCoefficientLineEdit"/>
+                   <widget class="QLineEdit" name="socialCoefficientLineEdit">
+                    <property name="text">
+                     <string>3</string>
+                    </property>
+                   </widget>
                   </item>
                  </layout>
                 </widget>
@@ -1090,7 +1106,11 @@ QTabBar::tab:selected {
                       </widget>
                      </item>
                      <item>
-                      <widget class="QLineEdit" name="inertialWeightLineEdit"/>
+                      <widget class="QLineEdit" name="inertialWeightLineEdit">
+                       <property name="text">
+                        <string>0.7</string>
+                       </property>
+                      </widget>
                      </item>
                     </layout>
                    </widget>
@@ -1150,7 +1170,11 @@ QTabBar::tab:selected {
                       </widget>
                      </item>
                      <item>
-                      <widget class="QLineEdit" name="normalizationLineEdit"/>
+                      <widget class="QLineEdit" name="normalizationLineEdit">
+                       <property name="text">
+                        <string>0.6</string>
+                       </property>
+                      </widget>
                      </item>
                     </layout>
                    </widget>
