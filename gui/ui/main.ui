@@ -558,7 +558,11 @@ QTabBar::tab:selected {
                   </widget>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="populationSizeLineEdit"/>
+                  <widget class="QLineEdit" name="populationSizeLineEdit">
+                   <property name="text">
+                    <string>100</string>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -584,7 +588,11 @@ QTabBar::tab:selected {
                   </widget>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="numberOfGenerationsLineEdit"/>
+                  <widget class="QLineEdit" name="numberOfGenerationsLineEdit">
+                   <property name="text">
+                    <string>20</string>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -610,7 +618,11 @@ QTabBar::tab:selected {
                   </widget>
                  </item>
                  <item>
-                  <widget class="QLineEdit" name="convergenceCriterionLineEdit"/>
+                  <widget class="QLineEdit" name="convergenceCriterionLineEdit">
+                   <property name="text">
+                    <string>0.1</string>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -718,7 +730,11 @@ QTabBar::tab:selected {
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="probabilityOfRecombinationLineEdit"/>
+                     <widget class="QLineEdit" name="probabilityOfRecombinationLineEdit">
+                      <property name="text">
+                       <string>0.8</string>
+                      </property>
+                     </widget>
                     </item>
                    </layout>
                   </item>
@@ -792,7 +808,11 @@ QTabBar::tab:selected {
                      </widget>
                     </item>
                     <item>
-                     <widget class="QLineEdit" name="probabilityOfMutationLineEdit"/>
+                     <widget class="QLineEdit" name="probabilityOfMutationLineEdit">
+                      <property name="text">
+                       <string>0.2</string>
+                      </property>
+                     </widget>
                     </item>
                    </layout>
                   </item>
@@ -861,7 +881,11 @@ QTabBar::tab:selected {
                           </widget>
                          </item>
                          <item>
-                          <widget class="QLineEdit" name="truncationSelectionLineEdit"/>
+                          <widget class="QLineEdit" name="truncationSelectionLineEdit">
+                           <property name="text">
+                            <string>0.7</string>
+                           </property>
+                          </widget>
                          </item>
                         </layout>
                        </item>
@@ -889,7 +913,11 @@ QTabBar::tab:selected {
                           </widget>
                          </item>
                          <item>
-                          <widget class="QLineEdit" name="bolzmanSelectionLineEdit"/>
+                          <widget class="QLineEdit" name="bolzmanSelectionLineEdit">
+                           <property name="text">
+                            <string>100</string>
+                           </property>
+                          </widget>
                          </item>
                         </layout>
                        </item>
@@ -1081,6 +1109,9 @@ QTabBar::tab:selected {
                     <property name="text">
                      <string>Use Inertial Weight</string>
                     </property>
+                    <property name="checked">
+                     <bool>true</bool>
+                    </property>
                    </widget>
                   </item>
                   <item>
@@ -1144,6 +1175,9 @@ QTabBar::tab:selected {
                    <widget class="QCheckBox" name="normalizationCheckBox">
                     <property name="text">
                      <string>Use Coefficient Normalization</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
