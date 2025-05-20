@@ -156,14 +156,17 @@ class GeneticAlgorithm(QObject):
 
         return new_population
 
-    def _bolzman_selection(self, population, descendants):
+    def _bolzman_selection(self, population, descendants, generation):
         combined_population = np.vstack((population, descendants))
         population_size = len(combined_population)
 
         fitness = np.array([self._function(x, y) for x, y in combined_population])
 
         new_population = []
-        temperature = self._bolzman_threshold
+
+        initial_temperature = self._bolzman_threshold
+        cooling_rate = 0.95
+        temperature = initial_temperature * (cooling_rate ** generation)
 
         while len(new_population) < self._population_size:
             # Случайно выбираем двух особей i и j
@@ -282,7 +285,7 @@ class GeneticAlgorithm(QObject):
                 if self._truncation_threshold_flag:
                     population = self._truncation_selection(population, descendants)
                 elif self._bolzman_threshold_flag:
-                    population = self._bolzman_selection(population, descendants)
+                    population = self._bolzman_selection(population, descendants, generation)
 
                 self.points.append(population.copy())
 
