@@ -98,25 +98,59 @@ class BeeSwarmMethod(QObject):
                 current_scouts = available_for_scouting[:num_to_deploy_scouts]
                 self._scout_bees.extend(current_scouts)
 
+                deployed_scout_positions = [] # Список позиций уже размещенных разведчиков в этой итерации
+                max_placement_attempts = 10 # Максимальное количество попыток найти свободное место
+
                 for bee in current_scouts:
-                    bee.move_to_random_point()
+                    placed_successfully = False
+                    for attempt in range(max_placement_attempts):
+                        # Генерируем новую случайную позицию (как в bee.move_to_random_point())
+                        x_min, x_max = self._x_bounds
+                        y_min, y_max = self._y_bounds
+                        potential_position = np.array([np.random.uniform(x_min, x_max), 
+                                                       np.random.uniform(y_min, y_max)])
+                        
+                        # Проверяем, не слишком ли близко к другим уже размещенным разведчикам
+                        is_too_close = False
+                        for existing_pos in deployed_scout_positions:
+                            if np.linalg.norm(potential_position - existing_pos) < self._size_of_area:
+                                is_too_close = True
+                                break
+                        
+                        if not is_too_close:
+                            bee.position = potential_position # Используем сеттер, который вычислит фитнес
+                            if bee.position is not None: # Дополнительная проверка, что позиция установилась
+                                deployed_scout_positions.append(bee.position)
+                            placed_successfully = True
+                            break # Успешно разместили, переходим к следующей пчеле
+                    
+                    if not placed_successfully:
+                        # bee.position = None # Старая логика: Не удалось найти свободное место, пчела остается в улье
+                        # self.log_emitter.log_signal.emit(f"Scout bee {bee} could not find a free spot after {max_placement_attempts} attempts.")
+                        self.log_emitter.log_signal.emit(f"Scout bee {str(bee)} could not find a clear spot after {max_placement_attempts} attempts. Placing randomly.")
+                        bee.move_to_random_point() # Новая логика: размещаем случайно
 
-                if current_scouts:
-                    scout_positions = np.array([bee.position for bee in current_scouts if bee.position is not None])
-                    if scout_positions.size > 0:
-                        self.update_signal.emit(scout_positions)
-                        self.log_emitter.log_signal.emit(f"Deployed {len(current_scouts)} scouts. They are now exploring...")
+                if current_scouts: 
+                    all_active_scout_positions = [bee.position for bee in current_scouts if bee.position is not None]
+                    
+                    if all_active_scout_positions:
+                        scout_positions_for_signal = np.array(all_active_scout_positions)
+                        self.update_signal.emit(scout_positions_for_signal)
+                        
+                        num_in_clear_spots = len(deployed_scout_positions) 
+                        num_total_active = len(all_active_scout_positions)
+                        self.log_emitter.log_signal.emit(f"Deployed {num_total_active} scouts. ({num_in_clear_spots} found clear spots). They are now exploring...")
+                        
+                        scouting_pause_duration = max(self.min_delay, self.initial_delay / 2)
+                        time.sleep(scouting_pause_duration)
+                        self.log_emitter.log_signal.emit(f"Scouts have returned after {scouting_pause_duration:.2f}s of exploration.")
                     else:
-                        self.log_emitter.log_signal.emit(f"Deployed {len(current_scouts)} scouts, but no valid positions to show yet.")
-
-                    scouting_pause_duration = max(self.min_delay, self.initial_delay / 2)
-                    time.sleep(scouting_pause_duration)
-                    self.log_emitter.log_signal.emit(f"Scouts have returned after {scouting_pause_duration:.2f}s of exploration.")
+                        # Эта ситуация (current_scouts не пуст, но all_active_scout_positions пуст) не должна возникать при новой логике
+                        self.log_emitter.log_signal.emit(f"Attempted to deploy {len(current_scouts)} scouts, but none acquired a valid position.")
+                else: 
+                    self.log_emitter.log_signal.emit("No available bees to deploy as scouts this iteration.")
                     
                     # scout_bees_info = "\n ".join(str(bee) for bee in current_scouts)
-                    # self.log_emitter.log_signal.emit(f"Returned scout bees details:\n{scout_bees_info}")
-                else:
-                    self.log_emitter.log_signal.emit("No available bees to deploy as scouts this iteration.")
 
                 active_positions = np.array([b.position for b in self._swarm if b.position is not None])
                 if active_positions.size > 0:
