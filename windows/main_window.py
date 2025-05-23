@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 
 from windows import FunctionManagerWindow, WorkLogWindow, SettingsWindow
 
-from optimization_methods import GradientDescentMethod, LibrarySimplexMethod, MySimplexMethod, GeneticAlgorithm, ParticleSwarmMethod
+from optimization_methods import GradientDescentMethod, LibrarySimplexMethod, MySimplexMethod, GeneticAlgorithm, ParticleSwarmMethod, BeeSwarmMethod
 from utils import LogEmitter, FunctionManagerHelper
 
 import numpy as np
@@ -33,6 +33,7 @@ class MainWindow(QMainWindow):
         self.simplex_method = None
         self.genetic_algorithm = None
         self.particle_swarm_algorithm = None
+        self.bee_swarm_algorithm = None
         self.optimization_thread = None
 
         if len(self.function_manager_helper.get_function_names()) > 0:
@@ -60,9 +61,6 @@ class MainWindow(QMainWindow):
 
         self.bolzmanSelectionRadioButton.toggled.connect(self.bolzman_selection_radio_button_toggled)
         self.bolzmanSelectionLineEdit.setEnabled(self.bolzmanSelectionRadioButton.isChecked())
-
-        # self.gridVisibility.stateChanged.connect(self.toggle_grid_visibility)
-        # self.axisVisibility.stateChanged.connect(self.toggle_axes_visibility)
 
         self.setFocusPolicy(Qt.StrongFocus)
 
@@ -183,6 +181,7 @@ class MainWindow(QMainWindow):
             self.clearDotsButton.setEnabled(False)
             self.stopButton.setEnabled(True)
             self.openGLWidget.update_optimization_path(np.array([]))
+            self.openGLWidget.set_connect_optimization_points(True)
 
             params = {
                 'point': (x, y),
@@ -192,7 +191,6 @@ class MainWindow(QMainWindow):
                 'function': self.function_manager_helper.get_current_function()['function']
             }
 
-            self.openGLWidget.set_connect_optimization_points(True)
             self.gradient_descent = GradientDescentMethod(params, self.log_emitter)
             self.gradient_descent.finished_signal.connect(self.on_optimization_finished)
             self.gradient_descent.update_signal.connect(self.openGLWidget.update_optimization_path)
@@ -224,8 +222,8 @@ class MainWindow(QMainWindow):
                     self.clearDotsButton.setEnabled(False)
                     self.stopButton.setEnabled(True)
                     self.openGLWidget.update_optimization_path(np.array([]))
-
                     self.openGLWidget.set_connect_optimization_points(False)
+                    
                     self.simplex_method = MySimplexMethod(params, self.log_emitter)
                     self.simplex_method.finished_signal.connect(self.on_optimization_finished)
                     self.simplex_method.update_signal.connect(self.openGLWidget.update_optimization_path)
@@ -250,11 +248,11 @@ class MainWindow(QMainWindow):
                 self.clearDotsButton.setEnabled(False)
                 self.stopButton.setEnabled(True)
                 self.openGLWidget.update_optimization_path(np.array([]))
-
+                self.openGLWidget.set_connect_optimization_points(False)
+                
                 self.optimizer = LibrarySimplexMethod(params, self.log_emitter)
                 self.optimizer.run()
-
-                self.openGLWidget.set_connect_optimization_points(False)
+                
                 self.simplex_method = LibrarySimplexMethod(params, self.log_emitter)
                 self.simplex_method.finished_signal.connect(self.on_optimization_finished)
                 self.simplex_method.update_signal.connect(self.openGLWidget.update_optimization_path)
@@ -405,6 +403,7 @@ class MainWindow(QMainWindow):
             self.clearDotsButton.setEnabled(False)
             self.stopButton.setEnabled(True)
             self.openGLWidget.update_optimization_path(np.array([]))
+            self.openGLWidget.set_connect_optimization_points(False)
 
             params = {
                 'population_size': population_size,
@@ -425,7 +424,6 @@ class MainWindow(QMainWindow):
                 'function': self.function_manager_helper.get_current_function()['function']
             }
 
-            self.openGLWidget.set_connect_optimization_points(False)
             self.genetic_algorithm = GeneticAlgorithm(params, self.log_emitter)
             self.genetic_algorithm.finished_signal.connect(self.on_optimization_finished)
             self.genetic_algorithm.update_signal.connect(self.openGLWidget.update_optimization_path)
@@ -523,6 +521,7 @@ class MainWindow(QMainWindow):
             self.clearDotsButton.setEnabled(False)
             self.stopButton.setEnabled(True)
             self.openGLWidget.update_optimization_path(np.array([]))
+            self.openGLWidget.set_connect_optimization_points(False)
 
             params = {
                 'number_of_particles': number_of_particles,
@@ -538,12 +537,108 @@ class MainWindow(QMainWindow):
                 'function': self.function_manager_helper.get_current_function()['function']
             }
 
-            self.openGLWidget.set_connect_optimization_points(False)
             self.particle_swarm_algorithm = ParticleSwarmMethod(params, self.log_emitter)
             self.particle_swarm_algorithm.finished_signal.connect(self.on_optimization_finished)
             self.particle_swarm_algorithm.update_signal.connect(self.openGLWidget.update_optimization_path)
 
             self.optimization_thread = threading.Thread(target=self.particle_swarm_algorithm.run, daemon=True)
+            self.optimization_thread.start()
+
+            self.statusbar.showMessage("Optimization started")
+        elif current_index == 4:
+            if len(self.function_manager_helper.get_current_function()['constraints']) != 0:
+                self.statusbar.showMessage(
+                    "Attention: Selected function is not supported by particle swarm optimization")
+                return
+
+            data = {
+                'number_of_scout_bees': self.numberOfScoutBeesLineEdit.text(),
+                'number_of_bees_sent_to_best_plots': self.numberOfBeesSentToBestPlotsLineEdit.text(),
+                'number_of_bees_sent_to_other_plots': self.numberOfBeesSentToOtherPlotsLineEdit.text(),
+                'number_of_best_plots': self.numberOfBestPlotsLineEdit.text(),
+                'number_of_other_selected_plots': self.numberOfOtherSelectedPlotsLineEdit.text(),
+                'size_of_area': self.sizeOfAreaLineEdit.text()
+            }
+
+            try:
+                number_of_scout_bees = int(data['number_of_scout_bees'])
+                if number_of_scout_bees <= 0:
+                    self.statusbar.showMessage("Error: Number of scout bees must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Number of scout bees must be a positive integer")
+                return
+
+            try:
+                number_of_bees_sent_to_best_plots = int(data['number_of_bees_sent_to_best_plots'])
+                if number_of_bees_sent_to_best_plots <= 0:
+                    self.statusbar.showMessage("Error: Number of bees sent to best plots must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Number of bees sent to best plots must be a positive integer")
+                return
+
+            try:
+                number_of_bees_sent_to_other_plots = int(data['number_of_bees_sent_to_other_plots'])
+                if number_of_bees_sent_to_other_plots <= 0:
+                    self.statusbar.showMessage("Error: Number of bees sent to other plots must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Number of bees sent to other plots must be a positive integer")
+                return
+
+            try:
+                number_of_best_plots = int(data['number_of_best_plots'])
+                if number_of_best_plots <= 0:
+                    self.statusbar.showMessage("Error: Number of best plots must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Number of best plots must be a positive integer")
+                return
+
+            try:
+                number_of_other_selected_plots = int(data['number_of_other_selected_plots'])
+                if number_of_other_selected_plots <= 0:
+                    self.statusbar.showMessage("Error: Number of other selected plots must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Number of other selected plots must be a positive integer")
+                return
+
+            try:
+                size_of_area = int(data['size_of_area'])
+                if size_of_area <= 0:
+                    self.statusbar.showMessage("Error: Size of area must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Size of area must be a positive integer")
+                return
+
+            self.workLogPlainTextEdit.clear()
+            self.tabWidget.setEnabled(False)
+            self.selectFunctionComboBox.setEnabled(False)
+            self.startButton.setEnabled(False)
+            self.clearDotsButton.setEnabled(False)
+            self.stopButton.setEnabled(True)
+            self.openGLWidget.update_optimization_path(np.array([]))
+
+            params = {
+                'number_of_scout_bees': number_of_scout_bees,
+                'number_of_bees_sent_to_best_plots': number_of_bees_sent_to_best_plots,
+                'number_of_bees_sent_to_other_plots': number_of_bees_sent_to_other_plots,
+                'number_of_best_plots': number_of_best_plots,
+                'number_of_other_selected_plots': number_of_other_selected_plots,
+                'size_of_area': size_of_area,
+                'x_bounds': self.openGLWidget.get_x_axis_range(),
+                'y_bounds': self.openGLWidget.get_y_axis_range(),
+                'function': self.function_manager_helper.get_current_function()['function']
+            }
+
+            self.bee_swarm_algorithm = BeeSwarmMethod(params, self.log_emitter)
+            self.bee_swarm_algorithm.finished_signal.connect(self.on_optimization_finished)
+            self.bee_swarm_algorithm.update_signal.connect(self.openGLWidget.update_optimization_path)
+
+            self.optimization_thread = threading.Thread(target=self.bee_swarm_algorithm.run, daemon=True)
             self.optimization_thread.start()
 
             self.statusbar.showMessage("Optimization started")
@@ -659,6 +754,11 @@ class MainWindow(QMainWindow):
             self.startButton.setEnabled(True)
         elif self.particle_swarm_algorithm:
             self.particle_swarm_algorithm.stop()
+            self.stopButton.setEnabled(False)
+            self.clearDotsButton.setEnabled(True)
+            self.startButton.setEnabled(True)
+        elif self.artificial_bee_colony_algorithm:
+            self.artificial_bee_colony_algorithm.stop()
             self.stopButton.setEnabled(False)
             self.clearDotsButton.setEnabled(True)
             self.startButton.setEnabled(True)

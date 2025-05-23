@@ -82,7 +82,12 @@
     <normaloff>../images/main_window.png</normaloff>../images/main_window.png</iconset>
   </property>
   <property name="styleSheet">
-   <string notr="true">QPushButton {
+   <string notr="true">* {
+    font-family: &quot;Arial&quot;, &quot;Helvetica&quot;, sans-serif;
+	font-weight: bold;
+}
+
+QPushButton {
     background-color: #f0f0f0;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -188,11 +193,14 @@ QTabBar::tab:selected {
          <widget class="QTabWidget" name="tabWidget">
           <property name="font">
            <font>
+            <family>Arial</family>
             <pointsize>9</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
            </font>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>4</number>
           </property>
           <widget class="QWidget" name="firstTab">
            <attribute name="title">
@@ -226,7 +234,10 @@ QTabBar::tab:selected {
                    </property>
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                    <property name="text">
@@ -240,7 +251,10 @@ QTabBar::tab:selected {
                     <widget class="QLabel" name="xLabel">
                      <property name="font">
                       <font>
+                       <family>Arial</family>
                        <pointsize>10</pointsize>
+                       <weight>75</weight>
+                       <bold>true</bold>
                       </font>
                      </property>
                      <property name="text">
@@ -252,7 +266,10 @@ QTabBar::tab:selected {
                     <widget class="QLineEdit" name="xLineEdit">
                      <property name="font">
                       <font>
+                       <family>Arial</family>
                        <pointsize>10</pointsize>
+                       <weight>75</weight>
+                       <bold>true</bold>
                       </font>
                      </property>
                     </widget>
@@ -265,7 +282,10 @@ QTabBar::tab:selected {
                     <widget class="QLabel" name="yLabel">
                      <property name="font">
                       <font>
+                       <family>Arial</family>
                        <pointsize>10</pointsize>
+                       <weight>75</weight>
+                       <bold>true</bold>
                       </font>
                      </property>
                      <property name="text">
@@ -277,7 +297,10 @@ QTabBar::tab:selected {
                     <widget class="QLineEdit" name="yLineEdit">
                      <property name="font">
                       <font>
+                       <family>Arial</family>
                        <pointsize>10</pointsize>
+                       <weight>75</weight>
+                       <bold>true</bold>
                       </font>
                      </property>
                     </widget>
@@ -304,7 +327,10 @@ QTabBar::tab:selected {
                   <widget class="QLabel" name="firstEpsLabel">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                    <property name="text">
@@ -316,7 +342,10 @@ QTabBar::tab:selected {
                   <widget class="QLineEdit" name="firstEpsLineEdit">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                   </widget>
@@ -341,7 +370,10 @@ QTabBar::tab:selected {
                   <widget class="QLabel" name="secondEpsLabel">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                    <property name="text">
@@ -353,7 +385,10 @@ QTabBar::tab:selected {
                   <widget class="QLineEdit" name="secondEpsLineEdit">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                   </widget>
@@ -378,7 +413,10 @@ QTabBar::tab:selected {
                   <widget class="QLabel" name="thirdEpsLabel">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>12</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                    <property name="text">
@@ -390,7 +428,10 @@ QTabBar::tab:selected {
                   <widget class="QLineEdit" name="thirdEpsLineEdit">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                   </widget>
@@ -415,7 +456,10 @@ QTabBar::tab:selected {
                   <widget class="QLabel" name="initialStepLabel">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                    <property name="text">
@@ -427,7 +471,10 @@ QTabBar::tab:selected {
                   <widget class="QLineEdit" name="initialStepLineEdit">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                   </widget>
@@ -452,7 +499,10 @@ QTabBar::tab:selected {
                   <widget class="QLabel" name="numIterLabel">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                    <property name="text">
@@ -464,7 +514,10 @@ QTabBar::tab:selected {
                   <widget class="QLineEdit" name="numIterLineEdit">
                    <property name="font">
                     <font>
+                     <family>Arial</family>
                      <pointsize>10</pointsize>
+                     <weight>75</weight>
+                     <bold>true</bold>
                     </font>
                    </property>
                   </widget>
@@ -488,7 +541,10 @@ QTabBar::tab:selected {
                 <widget class="QRadioButton" name="ourMethodRadioButton">
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -503,7 +559,10 @@ QTabBar::tab:selected {
                 <widget class="QRadioButton" name="libraryMethodRadioButton">
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -1225,6 +1284,218 @@ QTabBar::tab:selected {
            <attribute name="title">
             <string>5</string>
            </attribute>
+           <layout class="QGridLayout" name="gridLayout_6">
+            <item row="0" column="0">
+             <widget class="QGroupBox" name="verticalGroupBox">
+              <layout class="QVBoxLayout" name="verticalLayout_6">
+               <property name="leftMargin">
+                <number>9</number>
+               </property>
+               <property name="topMargin">
+                <number>9</number>
+               </property>
+               <property name="rightMargin">
+                <number>9</number>
+               </property>
+               <property name="bottomMargin">
+                <number>9</number>
+               </property>
+               <item>
+                <widget class="QGroupBox" name="numberOfScoutBeesHorizontalGroupBox">
+                 <layout class="QHBoxLayout" name="horizontalLayout_15" stretch="5,3">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="numberOfScoutBeesLabel">
+                    <property name="text">
+                     <string>Number Of Scout Bees:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="numberOfScoutBeesLineEdit">
+                    <property name="text">
+                     <string>20</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="numberOfBeesSentToBestPlotsHorizontalGroupBox">
+                 <layout class="QHBoxLayout" name="horizontalLayout_14" stretch="5,3">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="numberOfBeesSentToBestPlotsLabel">
+                    <property name="text">
+                     <string>Number Of Bees Sent To Best Plots:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="numberOfBeesSentToBestPlotsLineEdit">
+                    <property name="text">
+                     <string>10</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="numberOfBeesSentToOtherPlotsHorizontalGroupBox">
+                 <layout class="QHBoxLayout" name="horizontalLayout_13" stretch="5,3">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="numberOfBeesSentToOtherPlotsLabel">
+                    <property name="text">
+                     <string>Number Of Bees Sent To Other Plots:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="numberOfBeesSentToOtherPlotsLineEdit">
+                    <property name="text">
+                     <string>5</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="numberOfBestPlotsHorizontalGroupBox">
+                 <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="5,3">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="numberOfBestPlotsLabel">
+                    <property name="text">
+                     <string>Number Of Best Plots:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="numberOfBestPlotsLineEdit">
+                    <property name="text">
+                     <string>5</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="numberOfOtherSelectedPlotsHorizontalGroupBox">
+                 <layout class="QHBoxLayout" name="horizontalLayout_11" stretch="5,3">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="numberOfOtherSelectedPlotsLabel">
+                    <property name="text">
+                     <string>Number Of Other Selected Plots:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="numberOfOtherSelectedPlotsLineEdit">
+                    <property name="text">
+                     <string>3</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
+                <widget class="QGroupBox" name="sizeOfAreaHorizontalGroupBox">
+                 <layout class="QHBoxLayout" name="horizontalLayout_6" stretch="5,3">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="sizeOfAreaLabel">
+                    <property name="text">
+                     <string>Size Of Area For Each Plot:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="sizeOfAreaLineEdit">
+                    <property name="text">
+                     <string>2</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
           </widget>
           <widget class="QWidget" name="sixthTab">
            <attribute name="title">
@@ -1266,7 +1537,10 @@ QTabBar::tab:selected {
                 <widget class="QPushButton" name="clearFieldsButton">
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -1294,7 +1568,10 @@ QTabBar::tab:selected {
                 <widget class="QComboBox" name="selectFunctionComboBox">
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                 </widget>
@@ -1309,7 +1586,10 @@ QTabBar::tab:selected {
                  </property>
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -1347,7 +1627,10 @@ QTabBar::tab:selected {
                  </property>
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -1365,7 +1648,10 @@ QTabBar::tab:selected {
                  </property>
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -1386,7 +1672,10 @@ QTabBar::tab:selected {
                  </property>
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -1414,7 +1703,10 @@ QTabBar::tab:selected {
                 <widget class="QPushButton" name="returnButton">
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -1426,7 +1718,10 @@ QTabBar::tab:selected {
                 <widget class="QPushButton" name="settingsPushButton">
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -1462,9 +1757,10 @@ QTabBar::tab:selected {
               <widget class="QLabel" name="workLogLabel">
                <property name="font">
                 <font>
+                 <family>Arial</family>
                  <pointsize>10</pointsize>
-                 <weight>50</weight>
-                 <bold>false</bold>
+                 <weight>75</weight>
+                 <bold>true</bold>
                  <underline>false</underline>
                 </font>
                </property>
@@ -1480,8 +1776,10 @@ QTabBar::tab:selected {
               <widget class="QPlainTextEdit" name="workLogPlainTextEdit">
                <property name="font">
                 <font>
-                 <family>Consolas</family>
+                 <family>Arial</family>
                  <pointsize>10</pointsize>
+                 <weight>75</weight>
+                 <bold>true</bold>
                 </font>
                </property>
                <property name="readOnly">
@@ -1495,7 +1793,10 @@ QTabBar::tab:selected {
                 <widget class="QPushButton" name="viewInSeparateWindowButton">
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
@@ -1507,7 +1808,10 @@ QTabBar::tab:selected {
                 <widget class="QPushButton" name="clearWorkLogButton">
                  <property name="font">
                   <font>
+                   <family>Arial</family>
                    <pointsize>10</pointsize>
+                   <weight>75</weight>
+                   <bold>true</bold>
                   </font>
                  </property>
                  <property name="text">
