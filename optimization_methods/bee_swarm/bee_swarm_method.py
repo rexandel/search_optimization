@@ -16,6 +16,8 @@ class BeeSwarmMethod(QObject):
         self._number_of_other_selected_plots = params_dict['number_of_other_selected_plots']
         self._size_of_area = params_dict['size_of_area']
         self._max_iterations = params_dict['max_iterations']
+        self.convergence_threshold = params_dict.get('convergence_threshold', 1e-6)  # Порог для конвергенции
+        self.convergence_iterations = params_dict.get('convergence_iterations', 10)  # Количество итераций для проверки конвергенции
 
         self._x_bounds = params_dict['x_bounds']
         self._y_bounds = params_dict['y_bounds']
@@ -23,12 +25,16 @@ class BeeSwarmMethod(QObject):
 
         self._is_running = False
         self.log_emitter = log_emitter
-        self.initial_delay = 0.3
+        self.initial_delay = 0.1
         self.min_delay = 0.01
+        self.area_decay_rate = 0.80  # Коэффициент уменьшения размера области
+        self.min_area_size = 0.1  # Минимальный размер области
 
         self._swarm = self.initialize_swarm()
         self._best_fitness = float('inf')
         self._best_position = None
+        self._last_best_fitness = float('inf') # Для отслеживания конвергенции
+        self._convergence_counter = 0 # Счетчик итераций без значительного улучшения
 
         self._scout_bees = []
         self._bees_in_best_plots = []
@@ -75,11 +81,14 @@ class BeeSwarmMethod(QObject):
         self.log_emitter.log_signal.emit(f"  X bounds: ({self._x_bounds[0]:.6f}, {self._x_bounds[1]:.6f})")
         self.log_emitter.log_signal.emit(f"  Y bounds: ({self._y_bounds[0]:.6f}, {self._y_bounds[1]:.6f})")
         self.log_emitter.log_signal.emit(f"  Area size: {self._size_of_area:.6f}")
+        self.log_emitter.log_signal.emit(f"  Convergence threshold: {self.convergence_threshold:.2E}")
+        self.log_emitter.log_signal.emit(f"  Convergence iterations: {self.convergence_iterations}")
         self.log_emitter.log_signal.emit("------------------------------------")
         self.log_emitter.log_signal.emit(f"Initial swarm created with {len(self._swarm)} bees in hive.")
 
         try:
             iteration = 0
+            converged = False # Флаг для отслеживания конвергенции
             while self._is_running and iteration < self._max_iterations:
                 self.log_emitter.log_signal.emit(f"--- Iteration {iteration + 1} ---")
                 self.log_emitter.log_signal.emit("Working with bee scouts...")
@@ -118,6 +127,11 @@ class BeeSwarmMethod(QObject):
 
                 self.find_best_position()
                 self.log_emitter.log_signal.emit("")
+
+                # Проверка конвергенции
+                if self._check_for_convergence():
+                    converged = True
+                    break # Досрочный выход из цикла, если конвергенция достигнута
 
                 available_for_best_plots = [b for b in self._swarm if b not in self._scout_bees and b not in self._bees_in_best_plots and b not in self._bees_in_other_plots]
 
@@ -197,10 +211,24 @@ class BeeSwarmMethod(QObject):
                 self._scout_bees.clear()
                 self._bees_in_best_plots.clear()
                 self._bees_in_other_plots.clear()
-                self.log_emitter.log_signal.emit("All active bees returned to hive (roles cleared).\n")
+                self.log_emitter.log_signal.emit("All active bees returned to hive (roles cleared).")
+
+                # Уменьшение размера области поиска с каждой итерацией
+                old_area_size = self._size_of_area
+                self._size_of_area *= self.area_decay_rate
+                self._size_of_area = max(self._size_of_area, self.min_area_size)
+                if old_area_size != self._size_of_area:
+                    self.log_emitter.log_signal.emit(f"Area size updated from {old_area_size:.6f} to {self._size_of_area:.6f}")
+                self.log_emitter.log_signal.emit(f"Current area size for iteration {iteration + 1}: {self._size_of_area:.6f}")
+                self.log_emitter.log_signal.emit("") # Пустая строка для разделения логов итераций
 
                 iteration += 1
                 time.sleep(max(self.min_delay, self.initial_delay * (0.95 ** iteration)))
+
+            if converged:
+                self.log_emitter.log_signal.emit(f"ℹ️ Algorithm converged after {iteration + 1} iterations.")
+            elif iteration == self._max_iterations:
+                 self.log_emitter.log_signal.emit(f"ℹ️ Maximum iterations ({self._max_iterations}) reached.")
 
             final_fitness_log = f"{self._best_fitness:.4f}" if self._best_fitness != float('inf') else "Not found"
             final_position_log = f"({self._best_position[0]:.2f}, {self._best_position[1]:.2f})" if self._best_position is not None else "Not found"
@@ -220,8 +248,18 @@ class BeeSwarmMethod(QObject):
             self._is_running = False
             self.finished_signal.emit()
 
+    def _check_for_convergence(self):
+        if abs(self._best_fitness - self._last_best_fitness) < self.convergence_threshold:
+            self._convergence_counter += 1
+            self.log_emitter.log_signal.emit(f"Convergence counter: {self._convergence_counter}/{self.convergence_iterations}")
+        else:
+            self._convergence_counter = 0
+        self._last_best_fitness = self._best_fitness
+        return self._convergence_counter >= self.convergence_iterations
+
     def stop(self):
-        pass
+        self._is_running = False
+        self.log_emitter.log_signal.emit("🛑 Optimization stopped by user.")
 
     @property
     def number_of_scout_bees(self):

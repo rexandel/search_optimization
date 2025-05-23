@@ -769,8 +769,8 @@ class MainWindow(QMainWindow):
             self.stopButton.setEnabled(False)
             self.clearDotsButton.setEnabled(True)
             self.startButton.setEnabled(True)
-        elif self.artificial_bee_colony_algorithm:
-            self.artificial_bee_colony_algorithm.stop()
+        elif self.bee_swarm_algorithm:
+            self.bee_swarm_algorithm.stop()
             self.stopButton.setEnabled(False)
             self.clearDotsButton.setEnabled(True)
             self.startButton.setEnabled(True)
