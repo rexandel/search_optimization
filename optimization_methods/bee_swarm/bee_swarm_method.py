@@ -226,9 +226,9 @@ class BeeSwarmMethod(QObject):
                 time.sleep(max(self.min_delay, self.initial_delay * (0.95 ** iteration)))
 
             if converged:
-                self.log_emitter.log_signal.emit(f"ℹ️ Algorithm converged after {iteration + 1} iterations.")
+                self.log_emitter.log_signal.emit(f"✅ Algorithm converged after {iteration + 1} iterations.")
             elif iteration == self._max_iterations:
-                 self.log_emitter.log_signal.emit(f"ℹ️ Maximum iterations ({self._max_iterations}) reached.")
+                 self.log_emitter.log_signal.emit(f"✅ Maximum iterations ({self._max_iterations}) reached.")
 
             final_fitness_log = f"{self._best_fitness:.4f}" if self._best_fitness != float('inf') else "Not found"
             final_position_log = f"({self._best_position[0]:.2f}, {self._best_position[1]:.2f})" if self._best_position is not None else "Not found"
