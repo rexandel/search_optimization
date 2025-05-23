@@ -1046,7 +1046,7 @@ QTabBar::tab:selected {
                 </widget>
                </item>
                <item>
-                <widget class="QGroupBox" name="numberOfIterationshorizontalGroupBox">
+                <widget class="QGroupBox" name="numberOfIterationsParticleHorizontalGroupBox">
                  <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="3,3">
                   <property name="leftMargin">
                    <number>5</number>
@@ -1061,14 +1061,14 @@ QTabBar::tab:selected {
                    <number>5</number>
                   </property>
                   <item>
-                   <widget class="QLabel" name="numberOfIterationsLabel">
+                   <widget class="QLabel" name="numberOfIterationsParticleLabel">
                     <property name="text">
                      <string>Number Of Iterations:</string>
                     </property>
                    </widget>
                   </item>
                   <item>
-                   <widget class="QLineEdit" name="numberOfIterationsLineEdit">
+                   <widget class="QLineEdit" name="numberOfIterationsParticleLineEdit">
                     <property name="text">
                      <string>20</string>
                     </property>
@@ -1301,6 +1301,38 @@ QTabBar::tab:selected {
                 <number>9</number>
                </property>
                <item>
+                <widget class="QGroupBox" name="numberOfIterationsBeeSwarmHorizontalGroupBox">
+                 <layout class="QHBoxLayout" name="horizontalLayout_16" stretch="5,3">
+                  <property name="leftMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>5</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>5</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="numberOfIterationsBeeSwarmLabel">
+                    <property name="text">
+                     <string>Number Of Iterations:</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QLineEdit" name="numberOfIterationsBeeSwarmLineEdit">
+                    <property name="text">
+                     <string>20</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item>
                 <widget class="QGroupBox" name="numberOfScoutBeesHorizontalGroupBox">
                  <layout class="QHBoxLayout" name="horizontalLayout_15" stretch="5,3">
                   <property name="leftMargin">
@@ -1478,7 +1510,7 @@ QTabBar::tab:selected {
                   <item>
                    <widget class="QLabel" name="sizeOfAreaLabel">
                     <property name="text">
-                     <string>Size Of Area For Each Plot:</string>
+                     <string>Initial Size Of Area For Each Plot:</string>
                     </property>
                    </widget>
                   </item>

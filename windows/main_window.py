@@ -440,13 +440,13 @@ class MainWindow(QMainWindow):
 
             data = {
                 'number_of_particles': self.numberOfParticlesLineEdit.text(),
-                'number_of_iterations': self.numberOfIterationsLineEdit.text(),
                 'cognitive_coefficient': self.cognitiveCoefficientLineEdit.text(),
                 'social_coefficient': self.socialCoefficientLineEdit.text(),
                 'inertial_weight_flag': self.inertialWeightCheckBox.isChecked(),
                 'inertial_weight': self.inertialWeightLineEdit.text(),
                 'normalization_flag': self.normalizationCheckBox.isChecked(),
-                'normalization_coefficient': self.normalizationLineEdit.text()
+                'normalization_coefficient': self.normalizationLineEdit.text(),
+                'number_of_iterations': self.numberOfIterationsParticleLineEdit.text()
             }
 
             try:
@@ -552,6 +552,7 @@ class MainWindow(QMainWindow):
                 return
 
             data = {
+                'number_of_iterations': self.numberOfIterationsBeeSwarmLineEdit.text(),
                 'number_of_scout_bees': self.numberOfScoutBeesLineEdit.text(),
                 'number_of_bees_sent_to_best_plots': self.numberOfBeesSentToBestPlotsLineEdit.text(),
                 'number_of_bees_sent_to_other_plots': self.numberOfBeesSentToOtherPlotsLineEdit.text(),
@@ -559,6 +560,15 @@ class MainWindow(QMainWindow):
                 'number_of_other_selected_plots': self.numberOfOtherSelectedPlotsLineEdit.text(),
                 'size_of_area': self.sizeOfAreaLineEdit.text()
             }
+
+            try:
+                number_of_iterations = int(data['number_of_iterations'])
+                if number_of_iterations <= 0:
+                    self.statusbar.showMessage("Error: Number of iterations must be a positive integer")
+                    return
+            except ValueError:
+                self.statusbar.showMessage("Error: Number of iterations must be a positive integer")
+                return
 
             try:
                 number_of_scout_bees = int(data['number_of_scout_bees'])
@@ -621,8 +631,10 @@ class MainWindow(QMainWindow):
             self.clearDotsButton.setEnabled(False)
             self.stopButton.setEnabled(True)
             self.openGLWidget.update_optimization_path(np.array([]))
+            self.openGLWidget.set_connect_optimization_points(False)
 
             params = {
+                'max_iterations': number_of_iterations,
                 'number_of_scout_bees': number_of_scout_bees,
                 'number_of_bees_sent_to_best_plots': number_of_bees_sent_to_best_plots,
                 'number_of_bees_sent_to_other_plots': number_of_bees_sent_to_other_plots,

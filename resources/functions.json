@@ -1,71 +1,6 @@
 {
     "functions": [
         {
-            "name": "Example of function solved in tutorial",
-            "formula": "f(x,y) = 2 * x^2 + 2 * x * y + 2 * y^2 - 4 * x - 6 * y",
-            "python_formula": "lambda x, y: 2 * x**2 + 2 * x * y + 2 * y**2 - 4 * x - 6 * y",
-            "constraints": [
-                {
-                    "formula": "x + 2 * y <= 2",
-                    "python_formula": "lambda x, y: x + 2 * y - 2"
-                },
-                {
-                    "formula": "x >= 0",
-                    "python_formula": "lambda x, y: -x"
-                },
-                {
-                    "formula": "y >= 0",
-                    "python_formula": "lambda x, y: -y"
-                }
-            ]
-        },
-        {
-            "name": "Example of function for homework",
-            "formula": "f(x,y) = 2 * x^2 + 3 * y^2 + 4 * x * y - 6 * x - 3 * y",
-            "python_formula": "lambda x, y: 2 * x ** 2 + 3 * y ** 2 + 4 * x * y - 6 * x - 3 * y",
-            "constraints": [
-                {
-                    "formula": "x + y <= 1",
-                    "python_formula": "lambda x, y: x + y - 1"
-                },
-                {
-                    "formula": "2 * x + 3 * y <= 4",
-                    "python_formula": "lambda x, y: 2 * x + 3 * y - 4"
-                },
-                {
-                    "formula": "x >= 0",
-                    "python_formula": "lambda x, y: -x"
-                },
-                {
-                    "formula": "y >= 0",
-                    "python_formula": "lambda x, y: -y"
-                }
-            ]
-        },
-        {
-            "name": "Example function for simplex (Maximize)",
-            "formula": "f(x,y) = -6 * x - 3 * y + 0.5 * (x^2 + 2 * x * y + 2 * y^2)",
-            "python_formula": "lambda x, y: -6 * x - 3 * y + 0.5 * (x**2 + 2 * x * y + 2 * y**2)",
-            "constraints": [
-                {
-                    "formula": "x + y <= 4",
-                    "python_formula": "lambda x, y: x + y - 4"
-                },
-                {
-                    "formula": "x <= 2",
-                    "python_formula": "lambda x, y: x - 2"
-                },
-                {
-                    "formula": "x >= 0",
-                    "python_formula": "lambda x, y: -x"
-                },
-                {
-                    "formula": "y >= 0",
-                    "python_formula": "lambda x, y: -y"
-                }
-            ]
-        },
-        {
             "name": "Himmelblau Function",
             "formula": "f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2",
             "latex_formula": "$f(x, y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2$",
@@ -148,6 +83,71 @@
             "latex_formula": "$f(x,y) = -\\cos(x)\\cos(y)\\exp(-((x-\\pi)^2 + (y-\\pi)^2))$",
             "python_formula": "lambda x, y: -np.cos(x)*np.cos(y)*np.exp(-((x-np.pi)**2 + (y-np.pi)**2))",
             "constraints": []
+        },
+        {
+            "name": "Example of function solved in tutorial",
+            "formula": "f(x,y) = 2 * x^2 + 2 * x * y + 2 * y^2 - 4 * x - 6 * y",
+            "python_formula": "lambda x, y: 2 * x**2 + 2 * x * y + 2 * y**2 - 4 * x - 6 * y",
+            "constraints": [
+                {
+                    "formula": "x + 2 * y <= 2",
+                    "python_formula": "lambda x, y: x + 2 * y - 2"
+                },
+                {
+                    "formula": "x >= 0",
+                    "python_formula": "lambda x, y: -x"
+                },
+                {
+                    "formula": "y >= 0",
+                    "python_formula": "lambda x, y: -y"
+                }
+            ]
+        },
+        {
+            "name": "Example of function for homework",
+            "formula": "f(x,y) = 2 * x^2 + 3 * y^2 + 4 * x * y - 6 * x - 3 * y",
+            "python_formula": "lambda x, y: 2 * x ** 2 + 3 * y ** 2 + 4 * x * y - 6 * x - 3 * y",
+            "constraints": [
+                {
+                    "formula": "x + y <= 1",
+                    "python_formula": "lambda x, y: x + y - 1"
+                },
+                {
+                    "formula": "2 * x + 3 * y <= 4",
+                    "python_formula": "lambda x, y: 2 * x + 3 * y - 4"
+                },
+                {
+                    "formula": "x >= 0",
+                    "python_formula": "lambda x, y: -x"
+                },
+                {
+                    "formula": "y >= 0",
+                    "python_formula": "lambda x, y: -y"
+                }
+            ]
+        },
+        {
+            "name": "Example function for simplex (Maximize)",
+            "formula": "f(x,y) = -6 * x - 3 * y + 0.5 * (x^2 + 2 * x * y + 2 * y^2)",
+            "python_formula": "lambda x, y: -6 * x - 3 * y + 0.5 * (x**2 + 2 * x * y + 2 * y**2)",
+            "constraints": [
+                {
+                    "formula": "x + y <= 4",
+                    "python_formula": "lambda x, y: x + y - 4"
+                },
+                {
+                    "formula": "x <= 2",
+                    "python_formula": "lambda x, y: x - 2"
+                },
+                {
+                    "formula": "x >= 0",
+                    "python_formula": "lambda x, y: -x"
+                },
+                {
+                    "formula": "y >= 0",
+                    "python_formula": "lambda x, y: -y"
+                }
+            ]
         }
     ]
 }
