@@ -26,6 +26,35 @@ class Bee:
     def calculate_current_fitness(self):
         return self._bee_swarm.function(self._position[0], self._position[1])
 
+    # Getters
+    @property
+    def position(self):
+        return self._position
+
+    @property
+    def fitness(self):
+        return self._fitness
+
+    @property
+    def bee_swarm(self):
+        return self._bee_swarm
+
+    # Setters
+    @position.setter
+    def position(self, new_position):
+        if isinstance(new_position, np.ndarray) and new_position.shape == (2,):
+            self._position = new_position
+            self._fitness = self.calculate_current_fitness()
+        else:
+            raise ValueError("Position must be a numpy array of shape (2,)")
+
+    @fitness.setter
+    def fitness(self, new_fitness):
+        if isinstance(new_fitness, (int, float)):
+            self._fitness = new_fitness
+        else:
+            raise ValueError("Fitness must be a numeric value")
+
     def __str__(self):
         return (f"Bee:\n"
                 f"  Position: ({self._position[0]:.4f}, {self._position[1]:.4f})\n"
